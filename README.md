@@ -22,9 +22,9 @@ cd triton-server
 ### run load test
 
 run with web ui with charts visualization
-`locust -f pytorch_user.py,load_shape.py `
+`locust -f pytorch_user.py,load_test_plan.py `
 
 run and record stats in a csv file (good for comparison across experiments)
-`locust -f pytorch_user.py,load_shape.py --csv=resnet50-pytorch --headless`
+`locust -f pytorch_user.py,load_test_plan.py --csv=resnet50-pytorch --headless`
 
-`locust -f onnx_user.py,load_shape.py --csv=resnet50-onnx --headless`
+`locust -f onnx_user.py,load_test_plan.py --csv=resnet50-onnx --headless`
