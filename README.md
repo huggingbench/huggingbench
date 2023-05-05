@@ -26,3 +26,5 @@ run with web ui with charts visualization
 
 run and record stats in a csv file (good for comparison across experiments)
 `locust -f pytorch_user.py,load_shape.py --csv=resnet50-pytorch --headless`
+
+`locust -f onnx_user.py,load_shape.py --csv=resnet50-onnx --headless`
