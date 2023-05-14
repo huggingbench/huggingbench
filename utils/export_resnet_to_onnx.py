@@ -8,6 +8,8 @@
 # without an express license agreement from NVIDIA CORPORATION or
 # its affiliates is strictly prohibited.
 
+# This script exports torch version of resnet50 to onnx and torchscript format
+
 import torch
 import torchvision.models as models
 
