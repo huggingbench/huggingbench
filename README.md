@@ -4,6 +4,7 @@
 ```
 python3 -m venv env
 source  env/bin/activate
+pip install nvidia-pyindex
 pip3 install -r requirements.txt
 ```
 
@@ -19,7 +20,9 @@ cd triton-server
 ./run-prom.sh
 ```
 
-### run load test
+### client: run load test 
+
+`cd client`
 
 run with web ui with charts visualization
 `locust -f pytorch_user.py,load_test_plan.py `

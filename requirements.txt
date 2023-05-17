@@ -100,7 +100,7 @@ pexpect==4.8.0
 pickleshare==0.7.5
 Pillow==9.5.0
 platformdirs==3.4.0
-## polygraphy==0.46.2 , could not find this library version
+polygraphy==0.46.2
 prometheus-client==0.16.0
 prompt-toolkit==3.0.38
 protobuf==3.20.2
