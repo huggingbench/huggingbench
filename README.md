@@ -24,10 +24,13 @@ cd triton-server
 
 `cd client`
 
-run with web ui with charts visualization
-`locust -f pytorch_user.py,load_test_plan.py `
+Run BERT load test with Web UI with charts visualization:
+`locust -f bert.py `
 
-run and record stats in a csv file (good for comparison across experiments)
-`locust -f pytorch_user.py,load_test_plan.py --csv=resnet50-pytorch --headless`
+Run and record stats in a CSV file (good for comparison across experiments)
+`locust -f bert.py,load_test_plan.py --csv=bert-onnx --headless`
 
-`locust -f onnx_user.py,load_test_plan.py --csv=resnet50-onnx --headless`
+Run Resnet50 load test:
+`locust -f resnet.py`
+
+To add new ML mode simply extend `TritonUser` class and provide Dataset.
