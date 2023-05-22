@@ -1,4 +1,4 @@
-# This file contains abstract and utility classes for the client
+# This file contains re-usable code and utility classes for the client
 import threading
 import logging
 from typing import Union
@@ -12,7 +12,7 @@ DatasetAlias = Union[DatasetDict, Dataset,
 
 
 class InfDataset:
-    # This is a wrapper around a dataset that makes it infinitive and thread-safe
+    # This is a iterator around a dataset that makes it infinitive and thread-safe
     # We don't want to be recreating the dataset so we just re-start from the beginning
     # once we reach the end
     _lock = threading.Lock()
