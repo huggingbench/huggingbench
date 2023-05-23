@@ -1,6 +1,6 @@
-import time
 import logging
 import json
+from typing import List
 from prometheus_client import start_http_server, Counter, Histogram, Info
 import tritonclient.http as httpclient
 from tritonclient.utils import triton_to_np_dtype
@@ -15,14 +15,13 @@ PROM_PORT = 8011  # Prometheus port
 class TritonClient:
     """ Runs the given function in locust and records metrics """
     metric_infer_latency = Histogram(
-        "infer_latency", "Latency for inference in seconds", labelnames=["model"])
+        "infer_latency", "Latency for inference in seconds", labelnames=["model", "batch_size"])
     metric_infer_requests = Counter(
-        "infer_requests", "Number of inference requests", labelnames=["model"])
+        "infer_requests", "Number of inference requests", labelnames=["model", "batch_size"])
     metric_info = Info("client_info", "Information about the client")
-    LOG.info("Starting Prometheus server on port 8001")
-    start_http_server(PROM_PORT)
+    prom_started = False
 
-    def __init__(self, triton_url: str, model_name: str):
+    def __init__(self, triton_url: str, model_name: str, max_paralell_requests: int = 1):
         self._server_url = triton_url
         # we can't have "/" in the model file path
         escaped_model_name = model_name.replace("/", "-")
@@ -30,7 +29,8 @@ class TritonClient:
         self.model_version = MODEL_VERSION
         self.metric_info.info({"model": self.model})
         LOG.info("Creating triton client for server: %s", self._server_url)
-        self.client = httpclient.InferenceServerClient(url=self._server_url)
+        self.client = httpclient.InferenceServerClient(
+            url=self._server_url, concurrency=max_paralell_requests)
         errors = self._server_check(self.client)
         if errors:
             raise RuntimeError(f"Triton Server check failed: {errors}")
@@ -45,15 +45,52 @@ class TritonClient:
         self.inputs = {tm["name"]: tm for tm in model_metadata["inputs"]}
         self.outputs = {tm["name"]: tm for tm in model_metadata["outputs"]}
 
+        if not TritonClient.prom_started:
+            LOG.info("Starting Prometheus server on port %s", PROM_PORT)
+            start_http_server(PROM_PORT)
+            TritonClient.prom_started = True
+
     def infer(self, sample) -> httpclient.InferResult:
         """ Runs inference on the triton server """
-        self.metric_infer_requests.labels(self.model).inc()
-        with self.metric_infer_latency.labels(self.model).time():
-            return self.infer_req(sample=sample)
+        batched_sample = [sample]
+        return self.infer_batch(batched_sample)
 
-    def infer_req(self, sample) -> httpclient.InferResult:
+    def infer_batch(self, samples) -> httpclient.InferResult:
+        """ Runs inference on the triton server """
+        self.metric_infer_requests.labels(self.model, len(samples)).inc()
         infer_inputs = []
         infer_outputs = []
+        batched_data_per_input = {}
+        for sample in samples:
+            for input in self.inputs:
+                data_type = self.inputs[input]["datatype"]
+                np_dtype = triton_to_np_dtype(
+                    data_type)
+                data = sample[input].astype(np_dtype)
+                if input not in batched_data_per_input:
+                    batched_data_per_input[input] = []
+                batched_data_per_input[input].append(data)
+                LOG.debug("Input: %s, shape: %s", input, data.shape)
+        stacked_batched_data_per_input = {}
+        for input in batched_data_per_input:
+            stacked_batched_data_per_input[input] = np.stack(
+                batched_data_per_input[input], 0)
+        for stacked_input in stacked_batched_data_per_input:
+            infer_input = httpclient.InferInput(stacked_input,
+                                                stacked_batched_data_per_input[stacked_input].shape, self.inputs[stacked_input]["datatype"])
+            infer_input.set_data_from_numpy(
+                stacked_batched_data_per_input[stacked_input])
+            infer_inputs.append(infer_input)
+        infer_outputs = self._prepare_infer_outputs()
+        with self.metric_infer_latency.labels(self.model, len(samples)).time():
+            infer_res: httpclient.InferResult = self.client.infer(
+                model_name=self.model, model_version=self.model_version,
+                inputs=infer_inputs, outputs=infer_outputs)
+            return infer_res
+
+    def _prepare_infer_inputs(self, sample) -> List[httpclient.InferInput]:
+        """ Prepares the input for inference """
+        infer_inputs = []
         for input in self.inputs:
             data_type = self.inputs[input]["datatype"]
             np_dtype = triton_to_np_dtype(
@@ -61,20 +98,42 @@ class TritonClient:
             data = sample[input].astype(np_dtype)
             # adding batch dimension
             data = np.expand_dims(data, axis=0)
-            # we need to adjust shape for batching (batch size = 1)
-            shape = (1,) + sample[input].shape
             infer_input = httpclient.InferInput(
-                input, shape, data_type)
+                input, data.shape, data_type)
             infer_input.set_data_from_numpy(
                 data)
             infer_inputs.append(infer_input)
+        return infer_inputs
+
+    def _prepare_infer_outputs(self) -> List[httpclient.InferRequestedOutput]:
+        """ Prepares the output for inference """
+        infer_outputs = []
         for output in self.outputs:
             infer_outputs.append(
                 httpclient.InferRequestedOutput(output))
-        infer_res: httpclient.InferResult = self.client.infer(
-            model_name=self.model, model_version=self.model_version,
-            inputs=infer_inputs, outputs=infer_outputs)
-        return infer_res
+        return infer_outputs
+
+    def infer_req(self, sample) -> httpclient.InferResult:
+        infer_inputs = self._prepare_infer_inputs(sample)
+        infer_outputs = self._prepare_infer_outputs()
+        with self.metric_infer_latency.labels(self.model).time():
+            infer_res: httpclient.InferResult = self.client.infer(
+                model_name=self.model, model_version=self.model_version,
+                inputs=infer_inputs, outputs=infer_outputs)
+            return infer_res
+
+    def infer_req_async(self, sample) -> httpclient.InferAsyncRequest:
+        infer_inputs = self._prepare_infer_inputs(sample)
+        infer_outputs = self._prepare_infer_outputs(sample)
+        return self.client.async_infer(model_name=self.model, model_version=self.model_version,
+                                       inputs=infer_inputs, outputs=infer_outputs)
+
+    def process_async_requests(self, async_requests: List[httpclient.InferAsyncRequest]) -> List[httpclient.InferResult]:
+        """ Processes the async requests and returns the results """
+        results = []
+        for async_req in async_requests:
+            results.append(async_req.get_result())
+        return results
 
     def _server_check(self, client):
         errors = []

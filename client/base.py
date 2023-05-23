@@ -38,8 +38,9 @@ class InfDataset:
 
 
 class UserContext:
-    def __init__(self, inf_dataset: InfDataset, model_name: str, model_version: str):
+    def __init__(self, inf_dataset: InfDataset, model_name: str, model_version: str, batch_size: int = 1):
         LOG.info("Loaded dataset with %d samples", len(inf_dataset))
         self.dataset = inf_dataset
         self.model_name = model_name
         self.model_version = model_version
+        self.batch_size = batch_size

@@ -1,6 +1,6 @@
 import logging
 import time
-from locust import User, task, between
+from locust import User, task
 from base import UserContext
 from triton_client import TritonClient, TRITON_SERVER
 
@@ -9,13 +9,10 @@ LOG = logging.getLogger(__name__)
 
 class TritonUser(User):
 
-    wait_time = between(1, 5)
-
     def __init__(self, environment, ctx: UserContext):
         super().__init__(environment)
-        self.model = ctx.model_name
+        self.ctx = ctx
         self.client = TritonClient(TRITON_SERVER, ctx.model_name)
-        self.dataset = ctx.dataset
 
     @task
     def infer(self):
@@ -23,7 +20,7 @@ class TritonUser(User):
         # Locust event data
         request_meta = {
             "request_type": "infer",
-            "name": self.model,
+            "name": self.ctx.model_name,
             "start_time": time.time(),
             "response_length": 0,  # calculating this for an xmlrpc.client response would be too hard
             "response": None,
@@ -31,9 +28,11 @@ class TritonUser(User):
             "exception": None,
         }
         try:
-            sample = next(self.dataset)
+            batch = []
+            for _ in range(self.ctx.batch_size):
+                batch.append(next(self.ctx.dataset))
             start_perf_counter = time.perf_counter()
-            resp = self.client.infer(sample)
+            resp = self.client.infer_batch(batch)
         except Exception as err:
             LOG.error("Exception: %s", err, exec_info=True)
             request_meta["exception"] = err
