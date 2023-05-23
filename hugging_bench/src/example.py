@@ -13,4 +13,12 @@ onnx_with_shapes = onnx.with_shapes(
 
 config = TritonConfig("./kiarash_server/model_repository", onnx_with_shapes).create_model_repo()
 server = TritonServer(config)
-server.start()
+container, client = server.start()
+
+try:
+    for i in range(10):
+        res = client.infer_sample()
+        print(res.as_numpy('logits').shape)
+except Exception as e:
+    print(e)
+    container.stop()

@@ -1,3 +1,5 @@
+# use the following to install: python3.9 -m pip install -r requirements.txt
 tritonclient[all]==2.33.0
-protobuf==4.23.1
+# protobuf==4.23.1
 prometheus-client==0.16.0
+docker==6.1.2
