@@ -101,97 +101,123 @@ def run_docker(image_name, workspace=None, docker_args=[]):
     except Exception as e:
         raise e
     
-    
-# # ----------------------------------------examples-----------------------------------------------
+import timeit
+import numpy as np
 
-# def resnetExample():
-#     from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
-#     from google.protobuf import text_format
-#     model_dir, _ = export_hf_onnx_optimum_docker(model_id="microsoft/resnet-50", model_repo="./triton-server/model_repository", atol=0.001)
-#     # model_dir = get_model_dir("./triton-server/model_repository", "microsoft/resnet-50", "onnx")
-#     inspect_onnx(model_dir)
-#     conf = ModelConfig(
-#         name = get_model_name("microsoft/resnet-50", "onnx"),
-#         max_batch_size = 1,
-#         platform = ONNX_BACKEND,
-#         input = [ModelInput(name="pixel_values", data_type=DataType.TYPE_FP32, dims=[-1, -1, -1])],
-#         output = [ModelOutput(name="last_hidden_state", data_type=DataType.TYPE_FP32, dims=[2048, 2, 2])],
-#         )
-#     txt = text_format.MessageToString(conf, use_short_repeated_primitives=True)
-#     write_config_file(txt,  
-#                     model_dir)
+def measure_execution_time(func, num_executions):
+    """
+    Executes a function a specified number of times and measures the execution time.
 
-# def bertBaseUncasedExample():
-#     from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
-#     from google.protobuf import text_format
+    Parameters
+    ----------
+    func : callable
+        The function to execute.
+    num_executions : int
+        The number of times to execute the function.
 
-#     model_dir, _ = export_hf_onnx_optimum_docker(model_id="bert-base-uncased", model_repo="./triton-server/model_repository", atol=0.001)
-#     # model_dir = get_model_dir("./triton-server/model_repository", "microsoft/resnet-50", "onnx")
-#     inspect_onnx(model_dir)
-#     conf = ModelConfig(
-#         name = get_model_name("bert-base-uncased", "onnx"),
-#         max_batch_size = 1,
-#         platform = ONNX_BACKEND,
-#         input = [
-#             ModelInput(name="input_ids", data_type=DataType.TYPE_INT64, dims=[-1]),
-#             ModelInput(name="attention_mask", data_type=DataType.TYPE_INT64, dims=[-1]),
-#             ModelInput(name="token_type_ids", data_type=DataType.TYPE_INT64, dims=[-1]),
-#             ],
-#         output = [ModelOutput(name="last_hidden_state", data_type=DataType.TYPE_FP32, dims=[-1, 768])],
-#         )
-#     txt = text_format.MessageToString(conf, use_short_repeated_primitives=True)
-#     write_config_file(txt,  
-#                     model_dir)
-    
-# def distilBertBaseUncasedExample():
-#     from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
-#     from google.protobuf import text_format
+    Returns
+    -------
+    dict
+        A dictionary with keys 'median', '90_percentile' and '99_percentile' indicating 
+        the execution time for median, 90th percentile and 99th percentile, respectively.
+    """
+    # Create a list to store execution times
+    execution_times = []
 
-#     model_dir, _ = export_hf_onnx_optimum_docker(model_id="distilbert-base-uncased",  model_repo="./triton-server/model_repository", atol=0.001)
-#     # model_dir = get_model_dir("./triton-server/model_repository", "microsoft/resnet-50", "onnx")
-#     inspect_onnx(model_dir)
-#     conf = ModelConfig(
-#         name = get_model_name("distilbert-base-uncased", "onnx"),
-#         max_batch_size = 1,
-#         platform = ONNX_BACKEND,
-#         input = [
-#             ModelInput(name="input_ids", data_type=DataType.TYPE_INT64, dims=[-1]),
-#             ModelInput(name="attention_mask", data_type=DataType.TYPE_INT64, dims=[-1]),
-#             ],
-#         output = [ModelOutput(name="last_hidden_state", data_type=DataType.TYPE_FP32, dims=[-1, 768])],
-#         )
-#     txt = text_format.MessageToString(conf, use_short_repeated_primitives=True)
-#     write_config_file(txt,  
-#                     model_dir)
+    # Execute the function and measure execution time
+    for _ in range(num_executions):
+        start_time = timeit.default_timer()
+        func()
+        end_time = timeit.default_timer()
+        execution_time = end_time - start_time
+
+        # Store the execution time
+        execution_times.append(execution_time)
+
+    # Convert execution times to a numpy array
+    execution_times = np.array(execution_times)
+
+    # Calculate percentiles
+    median = np.median(execution_times)
+    percentile_90 = np.percentile(execution_times, 90)
+    percentile_99 = np.percentile(execution_times, 99)
+
+    return {'median': median, '90_percentile': percentile_90, '99_percentile': percentile_99}
+
+from hugging_bench_config import Input, Output
+def hf_model_input(hf_id, task=None, sequence_length=500):
+    INPUTS = {
+        "microsoft/resnet-50": [Input(name="pixel_values", dtype="FP32", dims=[3, 224, 224])],
+        "bert-base-uncased": [
+            Input(name="input_ids", dtype="INT64", dims=[sequence_length]),
+            Input(name="attention_mask", dtype="INT64", dims=[sequence_length]),
+            Input(name="token_type_ids", dtype="INT64", dims=[sequence_length]),
+        ],
+        "distilbert-base-uncased": [
+            Input(name="input_ids", dtype="INT64", dims=[sequence_length]),
+            Input(name="attention_mask", dtype="INT64", dims=[sequence_length]),
+        ]
+    }
+    return INPUTS[hf_id]
+
+def hf_model_output(hf_id, task=None, sequence_length=500):
+    OUTPUTS = {
+        "microsoft/resnet-50": [Output(name="logits", dtype="FP32", dims=[1000])],
+        "bert-base-uncased": [Output(name="logits", dtype="FP32", dims=[sequence_length, 30522])],
+        "distilbert-base-uncased": [Output(name="last_hidden_state", dtype="FP32", dims=[sequence_length, 768])]
+    }
+    return OUTPUTS[hf_id]
 
 
-# def distilBertBaseUncasedOnnxOpenVinoExample():
-#     from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
-#     from google.protobuf import text_format
+import csv
+from typing import NamedTuple, Dict
 
-#     onnx_model_dir, onnx_model_path = export_hf_onnx_optimum_docker(model_id="distilbert-base-uncased",  model_repo="./triton-server/model_repository", atol=0.001)
-#     ov_model_dir = convert_onnx2openvino_docker(input_model=onnx_model_path, model_repo="./triton-server/model_repository", model_id="distilbert-base-uncased")
-#     # model_dir = get_model_dir("./triton-server/model_repository", "microsoft/resnet-50", "onnx")
-#     inspect_onnx(onnx_model_dir)
-#     onnx_conf = ModelConfig(
-#         name = get_model_name("distilbert-base-uncased", "onnx"),
-#         max_batch_size = 1,
-#         platform = ONNX_BACKEND,
-#         input = [
-#             ModelInput(name="input_ids", data_type=DataType.TYPE_INT64, dims=[-1]),
-#             ModelInput(name="attention_mask", data_type=DataType.TYPE_INT64, dims=[-1]),
-#             ],
-#         output = [ModelOutput(name="last_hidden_state", data_type=DataType.TYPE_FP32, dims=[-1, 768])],
-#         )
-#     txt = text_format.MessageToString(onnx_conf, use_short_repeated_primitives=True)
-#     write_config_file(txt,  
-#                     onnx_model_dir)  
+class Spec(NamedTuple):
+    format: str
+    device: str
+    half: bool
 
-#     onnx_conf.platform = OPENVINO_BACKEND
-#     ov_txt = text_format.MessageToString(onnx_conf, use_short_repeated_primitives=True)
-#     write_config_file(ov_txt,  
-#                     ov_model_dir) 
+def append_to_csv(spec: Spec, info: Dict, csv_file: str):
+    """
+    Appends the given Spec instance and info dictionary to a CSV file.
 
-# # distilBertBaseUncasedOnnxOpenVinoExample()
+    Parameters
+    ----------
+    spec : Spec
+        Instance of Spec class.
+    info : dict
+        Additional information to be written to the CSV file.
+    csv_file : str
+        The CSV file to append to.
+    """
+    # Merge Spec fields and info into a single dict
+    data = {**spec._asdict(), **info}
 
-# # just_export_hf_onnx_optimum_docker("_temp")
+    # Define fieldnames with Spec fields first
+    fieldnames = list(spec._asdict().keys()) + list(info.keys())
+
+    # Check if the file exists to only write the header once
+    file_exists = os.path.isfile(csv_file)
+
+    with open(csv_file, 'a', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+        if not file_exists:
+            print(f"Writing header to CSV file {fieldnames}")
+            writer.writeheader()  # Write header only once
+
+        print(f"Writing data to CSV file: {data}")
+        writer.writerow(data)
+
+# Usage
+spec = Spec('png', 'cpu', False)
+info = {'additional_field': 'additional_value'}
+append_to_csv(spec, info, 'output.csv')
+
+# # Usage
+# def my_function():
+#     for _ in range(1000000):
+#         pass
+
+# results = measure_execution_time(my_function, 100)
+# print(results)

@@ -24,8 +24,7 @@ class TritonClient:
     def __init__(self, triton_url: str, model_name: str, max_paralell_requests: int = 1):
         self._server_url = triton_url
         # we can't have "/" in the model file path
-        escaped_model_name = model_name.replace("/", "-")
-        self.model = escaped_model_name + "-onnx"  # TODO: ONNX suffix hardcoded
+        self.model = model_name
         self.model_version = MODEL_VERSION
         self.metric_info.info({"model": self.model})
         LOG.info("Creating triton client for server: %s", self._server_url)

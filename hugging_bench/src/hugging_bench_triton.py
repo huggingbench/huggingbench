@@ -3,7 +3,6 @@
 # distilbert-base-uncased
 # resnet50 from HF (microsoft/resnet-50)
 
-import subprocess
 # from typing import Any
 
 from hugging_bench_config import ModelInfo
@@ -18,12 +17,13 @@ import tritonclient.http as httpclient
 import numpy as np
 # from tritonclient.utils import triton_to_np_dtype
 from hugging_bench_util import dtype_np_type
-
-from google.protobuf import text_format
-import shutil
 import os
+import multiprocessing
+
+multiprocessing.set_start_method('spawn')
 
 class TritonConfig:
+    
     # numpy types
     DTYPE_MAP = MappingProxyType({
             "INT64": DataType.TYPE_INT64,
@@ -43,6 +43,9 @@ class TritonConfig:
 
 
     def create_model_repo(self, max_batch_size=1):
+        from google.protobuf import text_format
+        import shutil
+
         print(PRINT_HEADER % 'CTREAT TRITON CONFIG')
         if(not self.model_repo):
             raise Exception("No model repo is set")
@@ -51,14 +54,14 @@ class TritonConfig:
         conf_pbtxt = text_format.MessageToString(conf, use_short_repeated_primitives=True)
         conf_dir = os.path.join(self.model_repo, self.model_info.unique_name())
         
-        if os.path.exists(conf_dir):
+        if os.path.isdir(conf_dir):
             print(f"Removing existing model directory: {conf_dir}")
             shutil.rmtree(conf_dir)
         
         model_dir = os.path.join(conf_dir, "1")
         os.makedirs(model_dir, exist_ok=True)
     
-        shutil.move(self.model_info.model_file_path(), model_dir)
+        shutil.copy(self.model_info.model_file_path(), model_dir)
         
         config_path = os.path.join(conf_dir, "config.pbtxt")
         try:
@@ -98,11 +101,17 @@ class TritonConfig:
     
 
 class AnyModelTestClient:
+    """
+    This client fetches input output shape of a model from the server and generates random data for inference based on the input shape.
 
+    Args:
+        target (str): Target server address
+        model_name (str): Model name
+    """
     def __init__(self, target, model_name) -> None:
         self.target = target
         self.model_name = model_name
-        print(f"Creating triton client for server: {self.target} for model name {self.model_name} ")
+        print(f"Creating triton client: server={self.target} model={self.model_name} ")
         self.triton_client = grpcclient.InferenceServerClient(url=target, verbose=False)
 
 
@@ -130,7 +139,6 @@ class AnyModelTestClient:
         infer_input = [ grpcclient.InferInput(i.name,  [1] + list(i.dims), DataType.Name(i.data_type).replace('TYPE_', '')) for i in self.input]
         for i in infer_input:
             data = self.generate_data(i.shape(), i.datatype())
-            print(data)
             i.set_data_from_numpy(data)
 
         infer_output = [grpcclient.InferRequestedOutput(o.name) for o in self.output]
@@ -139,12 +147,12 @@ class AnyModelTestClient:
                                       inputs=infer_input,
                                       outputs=infer_output)
         
-        print("output shape " + str(results.as_numpy('logits').shape))
+        print("Inference output shape " + str(results.as_numpy('logits').shape))
         return results
     
-
+    
 import docker
-import threading
+import time
 
 class TritonServer:  # This is just a placeholder. Replace it with your actual class.
     def __init__(self, triton_config, gpu=False, no_processor=1):
@@ -152,13 +160,23 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
         self.model_name = triton_config.model_info.unique_name()
         self.gpu = gpu
         self.no_processor = no_processor
+        self.container = None
 
-    def _print_logs(self, container):
+    def _print_triton_bootup_logs(self, container, timeout, stop_message="Started Metrics Service"):
+        """
+        Prints logs of a Docker container until a specific message appears or a timeout is reached.
+        """
+        print(PRINT_HEADER % " TRITON SERVER LOGS ")
+        stop_time = time.time() + timeout
         for line in container.logs(stream=True):
-            print(line.strip())
+            log_line = line.strip().decode('utf-8')
+            print(log_line)
+            if stop_message in log_line or time.time() > stop_time:
+                break
 
     def start(self, tritonserver_docker='nvcr.io/nvidia/tritonserver:23.04-py3'):
-        client = docker.from_env()
+        print(PRINT_HEADER % " STARTING TRITON SERVER ")
+        self.client = docker.from_env()
 
         volumes = {
             self.model_repo: {'bind': '/models', 'mode': 'rw'}
@@ -174,7 +192,7 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
             f"CUDA_VISIBLE_DEVICES={self.no_processor}" if self.gpu else f"CPU_COUNT={self.no_processor}"
         ]
 
-        container = client.containers.run(
+        self.container = self.client.containers.run(
             tritonserver_docker,
             command=["tritonserver", "--model-repository=/models"],
             volumes=volumes,
@@ -183,38 +201,30 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
             detach=True,
             auto_remove=True
         )
+        print(f"Starting container {self.container.name}")
 
-        # log_thread = threading.Thread(target=self._print_logs, args=(container,))
-        # log_thread.start()
+        #  hacky way to ensure container is initialized and running
+        import time
+        time.sleep(10)
+
+        # self._print_triton_bootup_logs(self.container, 10)   
         
-        return container, AnyModelTestClient("localhost:8001", self.model_name)
+        return self
     
-
-# class TritonServer1:
-#     def __init__(self, triton_config: TritonConfig) -> None:
-#         self.triton_config = triton_config
-#         self._server_url =  "localhost:8001"
+    def test_client(self):
+        return AnyModelTestClient("localhost:8001", self.model_name)
     
-
-#     def start(self, gpu=False, no_processor=1, tritonserver_docker='nvcr.io/nvidia/tritonserver:23.04-py3') -> AnyModelTestClient:
-#         if(not self.triton_config.model_repo):
-#             raise Exception("No model repo is set")
-        
-#         command = [
-#             'docker', 'run', '-d', '--rm',
-#             '-p', '8000:8000',
-#             '-p', '8001:8001',
-#             '-p', '8002:8002',
-#             '--gpus' if gpu else '--cpus', f'{no_processor}',
-#             '-v', f'{self.triton_config.model_repo}:/models',
-#             tritonserver_docker,
-#             'tritonserver',
-#             '--model-repository=/models'
-#         ]
-
-#         try:
-#             subprocess.run(command, check=True)
-#             return AnyModelTestClient(self._server_url, self.triton_config.model_info.unique_name())
-#         except subprocess.CalledProcessError as e:
-#             print(f"Command failed with exit code {e.returncode}")
-#             raise e
+    def stop(self):
+        try:
+            if(not self.container):
+                print("No container found")
+            elif(self.container.status in ["running", "created"]):
+                self.container.stop()
+                print("Container stopped")
+            else:
+                print(f"Skipped container.stop(). container status: {self.container.status}")
+            return self
+        except Exception as e:
+            print(e)
+            return self
+    

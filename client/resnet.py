@@ -2,6 +2,9 @@ from datasets import load_dataset
 from transformers import AutoConfig
 from transformers.models.resnet.configuration_resnet import ResNetOnnxConfig
 from torchvision import transforms
+from base import UserContext, InfDataset
+from triton_user import TritonUser
+
 
 MODEL_NAME = "microsoft/resnet-50"
 MODEL_VERSION = "1"
@@ -32,3 +35,14 @@ class ResnetDataset:
         dataset[self.input_names[0]] = [img_transform(
             image).numpy() for image in dataset[DATASET_COLUMN_NAME]]
         return dataset
+
+
+
+class ResnetUser(TritonUser):
+    # Locust User for Resnet Dataset
+    dataset = InfDataset(ResnetDataset(DATASET_NAME).dataset)
+
+    def __init__(self, environment):
+        super().__init__(environment, UserContext(
+            ResnetUser.dataset, MODEL_NAME, MODEL_VERSION))
+
