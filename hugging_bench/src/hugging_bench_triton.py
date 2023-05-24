@@ -75,13 +75,24 @@ class TritonConfig:
 
 
     def _config(self, max_batch_size):
-        return ModelConfig(
-            name=self.model_info.unique_name(),
-            max_batch_size=max_batch_size,
-            input=self._model_input(),
-            output=self._model_output(),
-            platform=self.BACKEND_MAP.get(self.model_info.format.format_type),
-        )
+        if(self.model_info.format.format_type == "onnx"):
+            return ModelConfig(
+                name=self.model_info.unique_name(),
+                max_batch_size=max_batch_size,
+                input=self._model_input(),
+                output=self._model_output(),
+                platform = self.BACKEND_MAP.get(self.model_info.format.format_type)
+            )
+        elif(self.model_info.format.format_type == "openvino"):
+            return ModelConfig(
+                name=self.model_info.unique_name(),
+                max_batch_size=max_batch_size,
+                input=self._model_input(),
+                output=self._model_output(),
+                backend = self.BACKEND_MAP.get(self.model_info.format.format_type)
+            )
+        else:
+            raise Exception(f"Unsupported model format {self.model_info.format.format_type}")
 
     
     def _model_input(self) -> ModelInput:
