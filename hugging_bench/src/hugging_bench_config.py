@@ -8,7 +8,8 @@ from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOut
 class Format(NamedTuple):
     format_type: str # onnx, openvino, torchscript, tensorflow
     parameters: dict = {}
-    origin: Optional['Format'] = None
+    origin: 'Format' = None
+
 
 
 class Input(NamedTuple):
@@ -32,7 +33,8 @@ class ModelInfo(NamedTuple):
     output_shape: list[Output] = field(init=False)
 
     def unique_name(self):
-        return f"{self.hf_id}-{self.task}-{self.format.format_type}-{self.param_str()}".replace("/", "-")
+        params_str = f"-{self.param_str()}" if(self.param_str()) else ""
+        return f"{self.hf_id}-{self.task}-{self.format.format_type}{params_str}".replace("/", "-")
     
     def model_dir(self):
         return os.path.join(os.path.abspath(self.base_dir), self.unique_name())
@@ -48,9 +50,9 @@ class ModelInfo(NamedTuple):
     
     def param_str(self):
         format_params = '-'.join(sorted(map(str, self.format.parameters.values())))
-        if self.format.origin:
-            origin_params = '-'.join(sorted(map(str, self.format.origin.parameters.values())))
-            format_params += '-' + origin_params
+        # if self.format.origin:
+            # origin_params = '-'.join(sorted(map(str, self.format.origin.parameters.values())))
+            # format_params += '-' + origin_params
         return format_params
     
 
