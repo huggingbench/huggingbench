@@ -133,20 +133,16 @@ class AnyModelTestClient:
         return np.random.rand(*dimensions).astype(type_map[data_type])
         
 
-    def infer_sample(self) -> grpcclient.InferResult:
+    def infer_sample(self, sequence_size=100) -> grpcclient.InferResult:
         self._get_input_output_shapes()
-        
-        infer_input = [ grpcclient.InferInput(i.name,  [1] + list(i.dims), DataType.Name(i.data_type).replace('TYPE_', '')) for i in self.input]
+        infer_input = [ grpcclient.InferInput(i.name,  [1] + [sequence_size if dim == -1 else dim for dim in list(i.dims)] , DataType.Name(i.data_type).replace('TYPE_', '')) for i in self.input]
         for i in infer_input:
             data = self.generate_data(i.shape(), i.datatype())
             i.set_data_from_numpy(data)
-
         infer_output = [grpcclient.InferRequestedOutput(o.name) for o in self.output]
-
         results = self.triton_client.infer(model_name=self.model_name,
                                       inputs=infer_input,
                                       outputs=infer_output)
-        
         print("Inference output shape " + str(results.as_numpy('logits').shape))
         return results
     
@@ -202,12 +198,13 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
             auto_remove=True
         )
         print(f"Starting container {self.container.name}")
+        self._print_triton_bootup_logs(self.container, 10) 
+        
+        # #  hacky way to ensure container is initialized and running
+        # import time
+        # time.sleep(10)
 
-        #  hacky way to ensure container is initialized and running
-        import time
-        time.sleep(10)
-
-        # self._print_triton_bootup_logs(self.container, 10)   
+        # self._print_triton_bootup_logs(self.container, 10) 
         
         return self
     

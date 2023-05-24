@@ -145,7 +145,7 @@ def measure_execution_time(func, num_executions):
     return {'median': median, '90_percentile': percentile_90, '99_percentile': percentile_99}
 
 from hugging_bench_config import Input, Output
-def hf_model_input(hf_id, task=None, sequence_length=500):
+def hf_model_input(hf_id, task=None, sequence_length=-1):
     INPUTS = {
         "microsoft/resnet-50": [Input(name="pixel_values", dtype="FP32", dims=[3, 224, 224])],
         "bert-base-uncased": [
@@ -160,11 +160,11 @@ def hf_model_input(hf_id, task=None, sequence_length=500):
     }
     return INPUTS[hf_id]
 
-def hf_model_output(hf_id, task=None, sequence_length=500):
+def hf_model_output(hf_id, task=None, sequence_length=-1):
     OUTPUTS = {
         "microsoft/resnet-50": [Output(name="logits", dtype="FP32", dims=[1000])],
         "bert-base-uncased": [Output(name="logits", dtype="FP32", dims=[sequence_length, 30522])],
-        "distilbert-base-uncased": [Output(name="last_hidden_state", dtype="FP32", dims=[sequence_length, 768])]
+        "distilbert-base-uncased": [Output(name="logits", dtype="FP32", dims=[sequence_length, 30522])]
     }
     return OUTPUTS[hf_id]
 
