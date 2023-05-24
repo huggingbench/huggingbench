@@ -24,7 +24,7 @@ class ModelExporter:
         print(PRINT_HEADER % " ONNX EXPORT ")
         model_info = ModelInfo(self.hf_id, self.task, Format("onnx", {"atol": atol, "device": device, "half": half}), base_dir=self.base_dir)
         
-        if(os.path.exists(model_info.model_file_path())): 
+        if(all(os.path.exists(file) for file in model_info.model_file_path())): 
             print(f"Model already exists at {model_info.model_file_path()}")
             return model_info
         
@@ -63,16 +63,22 @@ class ModelExporter:
         
         cmd = [
             "mo",
-            f"--input_model={onnx_model_info.model_file_path()}",
+            f"--input_model={onnx_model_info.model_file_path()[0]}",
             f"--output_dir={model_dir}"
         ]
         run_docker(image_name="openvino", docker_args=cmd)
+        #  for mocking purposes
+        # def create_empty_file(path):
+        #     with open(path, 'w'):
+        #         pass
+        # create_empty_file(os.path.join(model_dir, "model.xml"))
+        # create_empty_file(os.path.join(model_dir, "model.bin"))
         return ov_model_info
     
 
     def inspect_onnx(self, model_info: ModelInfo):
         print(PRINT_HEADER % " ONNX MODEL INSPECTION ")
-        run_docker(image_name="polygraphy", docker_args=["polygraphy", "inspect", "model", f"{model_info.model_file_path()}", "--mode=onnx"])
+        run_docker(image_name="polygraphy", docker_args=["polygraphy", "inspect", "model", f"{model_info.model_file_path()[0]}", "--mode=onnx"])
         
 
 def dtype_np_type(dtype: str):

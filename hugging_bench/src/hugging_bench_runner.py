@@ -48,10 +48,10 @@ class ExperimentRunner:
 
 
 experiments=[ 
-    # Spec(format="onnx", device="cpu", half=False),
+    Spec(format="onnx", device="cpu", half=False),
     # Spec(format="onnx", device="cuda", half=False), # this needs to be run on a GPU machine
     # Spec(format="onnx", device="cuda", half=True), # this needs to be run on a GPU machine
-    Spec(format="openvino", device="cpu", half=False), # this needs to be run on a intel cpu
+    # Spec(format="openvino", device="cpu", half=False), # this needs to be run on a intel cpu
 ]
 
 ExperimentRunner("microsoft/resnet-50", "./kiarash_server/model_repository", experiments).run()

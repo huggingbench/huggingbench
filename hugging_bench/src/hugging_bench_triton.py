@@ -61,7 +61,7 @@ class TritonConfig:
         model_dir = os.path.join(conf_dir, "1")
         os.makedirs(model_dir, exist_ok=True)
     
-        shutil.copy(self.model_info.model_file_path(), model_dir)
+        [shutil.copy(file, model_dir) for file in self.model_info.model_file_path()]
         
         config_path = os.path.join(conf_dir, "config.pbtxt")
         try:
