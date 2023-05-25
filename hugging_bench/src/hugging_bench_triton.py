@@ -28,6 +28,7 @@ class TritonConfig:
     DTYPE_MAP = MappingProxyType({
             "INT64": DataType.TYPE_INT64,
             "FP32": DataType.TYPE_FP32,
+            "FP16": DataType.TYPE_FP16,
             # add more dtype mappings if needed
         })
     
@@ -203,19 +204,18 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
             tritonserver_docker,
             command=["tritonserver", "--model-repository=/models"],
             volumes=volumes,
+            cpu_count= 0 if (self.gpu) else self.no_processor,
+            device_requests=[
+                        docker.types.DeviceRequest(device_ids=["0"], capabilities=[['gpu']])] if self.gpu else [],
             ports=ports,
             environment=environment,
             detach=True,
             auto_remove=True
-        )
+            )
+        
+                        
         print(f"Starting container {self.container.name}")
         self._print_triton_bootup_logs(self.container, 10) 
-        
-        # #  hacky way to ensure container is initialized and running
-        # import time
-        # time.sleep(10)
-
-        # self._print_triton_bootup_logs(self.container, 10) 
         
         return self
     

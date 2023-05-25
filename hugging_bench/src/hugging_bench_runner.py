@@ -30,8 +30,8 @@ class ExperimentRunner:
                 model_info = exporter.export_onnx2openvino(model_info)
 
             model_info = model_info.with_shapes(
-                input_shape=hf_model_input(self.hf_id), 
-                output_shape=hf_model_output(self.hf_id))  
+                input_shape=hf_model_input(self.hf_id, model_info.half()), 
+                output_shape=hf_model_output(self.hf_id, model_info.half()))  
             
             config = TritonConfig(self.triton_model_repo, model_info).create_model_repo()
             server = TritonServer(config)
@@ -56,6 +56,7 @@ experiments=[
 
 ExperimentRunner("microsoft/resnet-50", "./kiarash_server/model_repository", experiments).run()
 
+ExperimentRunner("microsoft/resnet-50", "./kiarash_server/model_repository", experiments).run()
 # ExperimentRunner("bert-base-uncased", "./kiarash_server/model_repository", experiments).run()
 
 # ExperimentRunner("distilbert-base-uncased", "./kiarash_server/model_repository", experiments).run()

@@ -10,6 +10,16 @@ class Format(NamedTuple):
     parameters: dict = {}
     origin: 'Format' = None
 
+    def gpu_enabled(self):
+        if self.parameters.get('device') == 'cuda' or (self.origin and self.origin.parameters.get('device') == 'cuda'):
+            return True
+        return False
+    
+    def half(self):
+        if self.parameters.get('half', False) or (self.origin and self.origin.parameters.get('half', False)):
+            return True
+        return False
+
 
 
 class Input(NamedTuple):
@@ -54,6 +64,12 @@ class ModelInfo(NamedTuple):
             # origin_params = '-'.join(sorted(map(str, self.format.origin.parameters.values())))
             # format_params += '-' + origin_params
         return format_params
+    
+    def gpu_enabled(self):
+        return self.format.gpu_enabled()
+    
+    def half(self):
+        return self.format.half()
     
 
     def with_shapes(self, input_shape, output_shape):
