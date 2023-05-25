@@ -9,6 +9,7 @@ RUN python -m pip install --upgrade pip
 RUN python -m pip install transformers==4.29.2
 RUN python -m pip install optimum==1.8.5
 RUN python -m pip install optimum[onnxruntime]==1.8.5
+RUN python -m pip pip install optimum[onnxruntime-gpu]==1.8.5
 
 # RUN python -m pip install optimum[openvino,nncf]==1.8.5
 # RUN python -m pip install polygraphy==0.47.1

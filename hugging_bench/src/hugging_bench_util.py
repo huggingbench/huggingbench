@@ -39,7 +39,7 @@ class ModelExporter:
             f"--atol={atol}"]
 
         if(half):
-            cmd.append("--f16")
+            cmd.append("--fp16")
             cmd.append("--device=cuda")
         
         if(self.task):
