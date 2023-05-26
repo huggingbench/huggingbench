@@ -35,18 +35,14 @@ class ExperimentRunner:
             spec.load_generator.init("localhost:8001", model_info.unique_name())
             try:
                 triton_server.start()
-
                 spec.load_generator.load()
                 summary = spec.load_generator.summary()
                 print(summary)
-                # client = triton_server.test_client()      
-                # stats = measure_execution_time(client.infer_sample, 100)
                 append_to_csv(vars(spec), summary, self.output)
-                
-                spec
-                triton_server.stop()
             except Exception as e:
                 print(e)
+            finally:
+                spec.load_generator.close()
                 triton_server.stop()
     
 
@@ -61,6 +57,5 @@ experiments=[
 server_spec = TritonServerSpec(model_repository_dir="./kiarash_server/model_repository")
 
 ExperimentRunner("microsoft/resnet-50", experiments, server_spec).run()
-ExperimentRunner("microsoft/resnet-50", experiments, server_spec).run()
-# ExperimentRunner("bert-base-uncased", "./kiarash_server/model_repository", experiments).run()
-# ExperimentRunner("distilbert-base-uncased", "./kiarash_server/model_repository", experiments).run()
+# ExperimentRunner("bert-base-uncased", experiments, server_spec).run()
+# ExperimentRunner("distilbert-base-uncased", experiments, server_spec).run()

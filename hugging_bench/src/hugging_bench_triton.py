@@ -166,11 +166,11 @@ import docker
 import time
 
 class TritonServer:  # This is just a placeholder. Replace it with your actual class.
-    def __init__(self, triton_config, gpu=False, no_processor=1):
+    def __init__(self, triton_config, no_processor=1):
         self.model_repo = triton_config.model_repo
         self.model_name = triton_config.model_info.unique_name()
-        self.gpu = gpu
         self.no_processor = no_processor
+        self.gpu = triton_config.model_info.gpu_enabled()
         self.container = None
 
     def _print_triton_bootup_logs(self, container, timeout, stop_message="Started Metrics Service"):
