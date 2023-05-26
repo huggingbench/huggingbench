@@ -199,10 +199,6 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
             '8002/tcp': 8002,
         }
 
-        environment = [
-            f"CUDA_VISIBLE_DEVICES={self.no_processor}" if self.gpu else f"CPU_COUNT={self.no_processor}"
-        ]
-
         self.container = self.client.containers.run(
             tritonserver_docker,
             command=["tritonserver", "--model-repository=/models"],
@@ -211,7 +207,6 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
             device_requests=[
                         docker.types.DeviceRequest(device_ids=["0"], capabilities=[['gpu']])] if self.gpu else [],
             ports=ports,
-            environment=environment,
             detach=True,
             auto_remove=True
             )
