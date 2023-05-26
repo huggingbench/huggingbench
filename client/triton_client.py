@@ -6,6 +6,8 @@ import tritonclient.http as httpclient
 from tritonclient.utils import triton_to_np_dtype
 import numpy as np
 
+### For dev purposes log INFO level
+logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__file__)
 TRITON_SERVER = "localhost:8000"
 MODEL_VERSION = "1"
@@ -21,7 +23,7 @@ class TritonClient:
     metric_info = Info("client_info", "Information about the client")
     prom_started = False
 
-    def __init__(self, triton_url: str, model_name: str, max_paralell_requests: int = 1):
+    def __init__(self, triton_url: str, model_name: str, max_paralell_requests: int = 1, prom_port: int = PROM_PORT):
         self._server_url = triton_url
         # we can't have "/" in the model file path
         self.model = model_name
@@ -45,16 +47,19 @@ class TritonClient:
         self.outputs = {tm["name"]: tm for tm in model_metadata["outputs"]}
 
         if not TritonClient.prom_started:
-            LOG.info("Starting Prometheus server on port %s", PROM_PORT)
-            start_http_server(PROM_PORT)
+            LOG.info("Starting Prometheus server on port %s", prom_port)
+            start_http_server(prom_port)
             TritonClient.prom_started = True
 
     def infer(self, sample) -> httpclient.InferResult:
         """ Runs inference on the triton server """
         batched_sample = [sample]
         return self.infer_batch(batched_sample)
-
+    
     def infer_batch(self, samples) -> httpclient.InferResult:
+        return self._infer_batch(samples)
+
+    def _infer_batch(self, samples, async_req : bool = False):
         """ Runs inference on the triton server """
         self.metric_infer_requests.labels(self.model, len(samples)).inc()
         infer_inputs = []
@@ -82,10 +87,18 @@ class TritonClient:
             infer_inputs.append(infer_input)
         infer_outputs = self._prepare_infer_outputs()
         with self.metric_infer_latency.labels(self.model, len(samples)).time():
-            infer_res: httpclient.InferResult = self.client.infer(
+            if async_req:
+                return self.client.infer(
                 model_name=self.model, model_version=self.model_version,
                 inputs=infer_inputs, outputs=infer_outputs)
-            return infer_res
+            else:
+                return self.client.async_infer(
+                    model_name=self.model, model_version=self.model_version,
+                inputs=infer_inputs, outputs=infer_outputs)
+    
+    def infer_batch_async(self, samples) -> httpclient.InferAsyncRequest:
+        return self.infer_batch(samples, async_req=True)
+
 
     def _prepare_infer_inputs(self, sample) -> List[httpclient.InferInput]:
         """ Prepares the input for inference """
