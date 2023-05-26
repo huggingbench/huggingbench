@@ -3,8 +3,6 @@ from hugging_bench_config import ExperimentSpec, TritonServerSpec, LoadGenerator
 from hugging_bench_triton import TritonConfig, TritonServer, AnyModelTestClient
 import os
 
-
-
 class FitAllModelLoadGenerator(LoadGenerator):
     def init(self, target, model_name):
         self.client = AnyModelTestClient(target, model_name)
@@ -62,3 +60,6 @@ server_spec = TritonServerSpec(model_repository_dir="./kiarash_server/model_repo
 ExperimentRunner("microsoft/resnet-50", experiments, server_spec).run()
 # ExperimentRunner("bert-base-uncased", experiments, server_spec).run()
 # ExperimentRunner("distilbert-base-uncased", experiments, server_spec).run()
+# ExperimentRunner("microsoft/resnet-50", experiments, server_spec).run()
+# ExperimentRunner("bert-base-uncased", "./kiarash_server/model_repository", experiments).run()
+# ExperimentRunner("distilbert-base-uncased", "./kiarash_server/model_repository", experiments).run()
