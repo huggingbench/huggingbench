@@ -5,7 +5,7 @@ import os
 
 
 
-class TestLoadGenerator(LoadGenerator):
+class FitAllModelLoadGenerator(LoadGenerator):
     def init(self, target, model_name):
         self.client = AnyModelTestClient(target, model_name)
 
@@ -51,7 +51,7 @@ class ExperimentRunner:
     
 
 experiments=[ 
-    ExperimentSpec(format="onnx", device="cpu", half=False, load_generator=TestLoadGenerator()),
+    ExperimentSpec(format="onnx", device="cpu", half=False, load_generator=FitAllModelLoadGenerator()),
     # Spec(format="onnx", device="cuda", half=False), # this needs to be run on a GPU machine
     # Spec(format="onnx", device="cuda", half=True), # this needs to be run on a GPU machine
     # Spec(format="openvino", device="cpu", half=False), # this needs to be run on a intel cpu
