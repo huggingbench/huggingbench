@@ -32,8 +32,8 @@ class ModelExporter:
             raise Exception(f"Unknown format {self.spec.format}")
 
         model_info = model_info.with_shapes(
-            input_shape=hf_model_input(self.hf_id, model_info.half()), 
-            output_shape=hf_model_output(self.hf_id, model_info.half()))  
+            input_shape=hf_model_input(self.hf_id, half=model_info.half()), 
+            output_shape=hf_model_output(self.hf_id, half=model_info.half()))  
         
         return model_info
 

@@ -140,6 +140,7 @@ class AnyModelTestClient:
             'INT64': np.int64,
             'INT32': np.int32,
             'INT16': np.int16,
+            'FP16': np.float16,
             'FP32': np.float32,
             'FP64': np.float64,
         }
