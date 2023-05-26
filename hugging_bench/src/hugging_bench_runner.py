@@ -48,6 +48,9 @@ class ExperimentRunner:
 
 experiments=[ 
     ExperimentSpec(format="onnx", device="cpu", half=False, load_generator=FitAllModelLoadGenerator()),
+    # ExperimentSpec(format="onnx", device="cuda", half=False, load_generator=FitAllModelLoadGenerator()),
+    # ExperimentSpec(format="onnx", device="cuda", half=True, load_generator=FitAllModelLoadGenerator()),
+    # ExperimentSpec(format="openvino", device="cpu", half=False, load_generator=FitAllModelLoadGenerator()),
     # Spec(format="onnx", device="cuda", half=False), # this needs to be run on a GPU machine
     # Spec(format="onnx", device="cuda", half=True), # this needs to be run on a GPU machine
     # Spec(format="openvino", device="cpu", half=False), # this needs to be run on a intel cpu
