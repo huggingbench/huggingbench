@@ -1,8 +1,41 @@
-from enum import Enum
-import os
+
 from dataclasses import dataclass, field
-from typing import NamedTuple, Optional
-from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
+from typing import NamedTuple
+# from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
+import os
+
+
+@dataclass
+class TritonServerSpec:
+    # TODO ports not used yet
+    grpc_port: int = 8001
+    http_port: int = 8000
+    model_repository_dir: str = "./model_repository"
+
+
+class LoadGenerator:
+    def init(self, target, model_name):
+        pass
+    
+    def load(self):
+        pass
+
+    def close(self):
+        pass
+    
+    def summary(self):
+        return {}
+    
+    def __str__(self):
+        return self.__class__.__name__
+
+
+@dataclass
+class ExperimentSpec:
+    format: str
+    device: str
+    half: bool
+    load_generator: LoadGenerator
 
 
 class Format(NamedTuple):
@@ -19,7 +52,6 @@ class Format(NamedTuple):
         if self.parameters.get('half', False) or (self.origin and self.origin.parameters.get('half', False)):
             return True
         return False
-
 
 
 class Input(NamedTuple):

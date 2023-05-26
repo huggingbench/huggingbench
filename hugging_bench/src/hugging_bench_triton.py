@@ -19,6 +19,7 @@ import numpy as np
 from hugging_bench_util import dtype_np_type
 import os
 import multiprocessing
+from hugging_bench_config import TritonServerSpec
 
 multiprocessing.set_start_method('spawn')
 
@@ -38,9 +39,11 @@ class TritonConfig:
             # add more backend mappings if needed
         })
     
-    def __init__(self, model_repo_dir: str, model_info: ModelInfo) -> None:
+    def __init__(self, server_spec: TritonServerSpec, model_info: ModelInfo) -> None:
         self.model_info = model_info
-        self.model_repo = os.path.abspath(model_repo_dir)
+        self.model_repo = os.path.abspath(server_spec.model_repository_dir)
+        self.grpc_port = server_spec.grpc_port
+        self.http_port = server_spec.http_port
 
 
     def create_model_repo(self, max_batch_size=1):

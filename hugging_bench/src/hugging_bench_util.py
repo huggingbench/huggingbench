@@ -2,8 +2,9 @@ import os
 import os
 import subprocess
 from typing import Any
-import shutil
+
 from hugging_bench_config import Format, ModelInfo
+from hugging_bench_config import ExperimentSpec
 # from model_config_constants import *
 
 ONNX_BACKEND = "onnxruntime_onnx"
@@ -14,13 +15,29 @@ PRINT_HEADER = "\n\n============================%s==============================
 class ModelExporter:
     # from util import just_export_hf_onnx_optimum_docker, convert_onnx2openvino_docker
     
-    def __init__(self, hf_id, task=None, base_dir=None) -> None:
+    def __init__(self, hf_id, spec: ExperimentSpec, task=None, base_dir=None) -> None:
         self.hf_id = hf_id
+        self.spec = spec
         self.task = task
         self.base_dir = base_dir if(base_dir) else os.getcwd()
         
+    def export(self):
+        model_info = None
+        if(self.spec.format == "onnx"):
+            model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half)
+        elif(self.spec.format == "openvino"):
+            model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half)
+            model_info = self._export_onnx2openvino(model_info)
+        else:
+            raise Exception(f"Unknown format {self.spec.format}")
 
-    def export_hf2onnx(self, atol=0.001, device=None, half=False):
+        model_info = model_info.with_shapes(
+            input_shape=hf_model_input(self.hf_id, model_info.half()), 
+            output_shape=hf_model_output(self.hf_id, model_info.half()))  
+        
+        return model_info
+
+    def _export_hf2onnx(self, atol=0.001, device=None, half=False):
         print(PRINT_HEADER % " ONNX EXPORT ")
         model_info = ModelInfo(self.hf_id, self.task, Format("onnx", {"atol": atol, "device": device, "half": half}), base_dir=self.base_dir)
         
@@ -57,7 +74,7 @@ class ModelExporter:
         return model_info
 
 
-    def export_onnx2openvino(self, onnx_model_info: ModelInfo):
+    def _export_onnx2openvino(self, onnx_model_info: ModelInfo):
         print(PRINT_HEADER % " ONNX 2 OPENVINO CONVERSION ")   
         ov_model_info = ModelInfo(onnx_model_info.hf_id, onnx_model_info.task, Format("openvino", origin=onnx_model_info), self.base_dir)
         model_dir = ov_model_info.model_dir()
@@ -78,7 +95,7 @@ class ModelExporter:
         return ov_model_info
     
 
-    def inspect_onnx(self, model_info: ModelInfo):
+    def _inspect_onnx(self, model_info: ModelInfo):
         print(PRINT_HEADER % " ONNX MODEL INSPECTION ")
         run_docker_sdk(image_name="polygraphy", docker_args=["polygraphy", "inspect", "model", f"{model_info.model_file_path()[0]}", "--mode=onnx"])
         
@@ -153,7 +170,7 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False):
 import timeit
 import numpy as np
 
-def measure_execution_time(func, num_executions):
+def measure_execution_time(func, num_executions) -> dict:
     """
     Executes a function a specified number of times and measures the execution time.
 
@@ -229,12 +246,12 @@ def hf_model_output(hf_id, task=None, sequence_length=-1, half=False):
 import csv
 from typing import NamedTuple, Dict
 
-class Spec(NamedTuple):
+class ExperimentSpec(NamedTuple):
     format: str
     device: str
     half: bool
 
-def append_to_csv(spec: Spec, info: Dict, csv_file: str):
+def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
     """
     Appends the given Spec instance and info dictionary to a CSV file.
 
@@ -248,10 +265,10 @@ def append_to_csv(spec: Spec, info: Dict, csv_file: str):
         The CSV file to append to.
     """
     # Merge Spec fields and info into a single dict
-    data = {**spec._asdict(), **info}
+    data = {**spec_dict, **info}
 
     # Define fieldnames with Spec fields first
-    fieldnames = list(spec._asdict().keys()) + list(info.keys())
+    fieldnames = list(spec_dict.keys()) + list(info.keys())
 
     # Check if the file exists to only write the header once
     file_exists = os.path.isfile(csv_file)
