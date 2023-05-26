@@ -32,6 +32,7 @@ class TritonUser(User):
             for _ in range(self.ctx.batch_size):
                 batch.append(next(self.ctx.dataset))
             start_perf_counter = time.perf_counter()
+            LOG.info("Sending batch: %s", batch)
             resp = self.client.infer_batch(batch)
         except Exception as err:
             LOG.error("Exception: %s", err, exec_info=True)
