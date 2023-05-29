@@ -1,7 +1,7 @@
 import logging
 import json
 from typing import List
-from prometheus_client import start_http_server, Counter, Histogram, Info
+from prometheus_client import REGISTRY, start_http_server, Counter, Histogram, Info, write_to_textfile
 import tritonclient.http as httpclient
 from tritonclient.utils import triton_to_np_dtype
 import numpy as np
@@ -157,3 +157,6 @@ class TritonClient:
             errors.append(
                 f"Model {self.model}:{self.model_version} is not ready")
         return errors
+    
+    def write_metrics(file: str):
+        write_to_textfile(file, REGISTRY)

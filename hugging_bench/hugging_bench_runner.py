@@ -32,6 +32,7 @@ class ExperimentRunner:
             except Exception as e:
                 print(e)
             finally:
+                triton_client.write_metrics('metrics.csv')
                 triton_server.stop()
     
 

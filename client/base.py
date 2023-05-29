@@ -27,6 +27,7 @@ class DatasetIterator:
     def __init__(self, dataset: DatasetAlias, infinite: bool = True):
         self.dataset = dataset
         self.index = 0
+        self.infinite = infinite
 
     def __iter__(self):
         return self
@@ -34,6 +35,8 @@ class DatasetIterator:
     def __next__(self):
         with self._lock:
             if self.index >= len(self.dataset):
+                if not self.infinite:
+                    raise StopIteration
                 self.index = 0
             item = self.dataset[self.index]
             self.index += 1
