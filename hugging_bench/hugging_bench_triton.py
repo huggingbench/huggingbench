@@ -8,7 +8,7 @@
 from hugging_bench_config import ModelInfo
 from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
 from types import MappingProxyType
-from hugging_bench_util import PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND
+from hugging_bench_util import PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND, TRT_BACKEND
 import os, logging
 import multiprocessing
 from hugging_bench_config import TritonServerSpec
@@ -30,6 +30,7 @@ class TritonConfig:
     BACKEND_MAP = MappingProxyType({
             "onnx": ONNX_BACKEND,
             "openvino": OPENVINO_BACKEND,
+            "trt": TRT_BACKEND,
             # add more backend mappings if needed
         })
     
@@ -88,6 +89,15 @@ class TritonConfig:
                 input=self._model_input(),
                 output=self._model_output(),
                 backend = self.BACKEND_MAP.get(self.model_info.format.format_type)
+            )
+        elif(self.model_info.format.format_type == "trt"):
+            print(f"self.model_info.input_shape {self.model_info}")
+            return ModelConfig(
+                name=self.model_info.unique_name(),
+                max_batch_size=max_batch_size,
+                input=self._model_input(),
+                output=self._model_output(),
+                platform = self.BACKEND_MAP.get(self.model_info.format.format_type)
             )
         else:
             raise Exception(f"Unsupported model format {self.model_info.format.format_type}")
