@@ -33,6 +33,7 @@ class Runner:
         self.dataset = DatasetIterator(dataset, infinite=False)
     
     def run(self):
+        LOG.info("Starting client runner")
         def send_batch(batch):
             LOG.debug("Sending batch of size %d", len(batch))
             if self.config.async_req:
@@ -50,5 +51,6 @@ class Runner:
               send_batch(batch)
         if len(batch) > 0:
             send_batch(batch)
+        LOG.info("Finished client runner")
              
          

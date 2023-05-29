@@ -158,5 +158,5 @@ class TritonClient:
                 f"Model {self.model}:{self.model_version} is not ready")
         return errors
     
-    def write_metrics(file: str):
+    def write_metrics(self, file: str):
         write_to_textfile(file, REGISTRY)
