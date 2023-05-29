@@ -1,3 +1,4 @@
+import numpy as np
 from client.base import DatasetAlias
 from hugging_bench_util import ModelExporter, measure_execution_time, append_to_csv
 from hugging_bench_config import ExperimentSpec, TritonServerSpec
@@ -28,12 +29,21 @@ class ExperimentRunner:
             runner_config = RunnerConfig()
             client_runner = Runner(runner_config, triton_client, self.dataset)
             try:
-                client_runner.run()
+                exec_times = client_runner.run()
             except Exception as e:
                 print(e)
             finally:
                 triton_server.stop()
-                triton_client.write_metrics('metrics.csv')
+            self.process_results(spec, exec_times)
+
+    def process_results(self, spec: ExperimentSpec, exec_times: list[float]):
+        # Calculate percentiles and append to csv
+        exec_times = np.array(exec_times)
+        median = np.median(exec_times)
+        percentile_90 = np.percentile(exec_times, 90)
+        percentile_99 = np.percentile(exec_times, 99)
+        res_dict = {'median': median, '90_percentile': percentile_90, '99_percentile': percentile_99}
+        append_to_csv(vars(spec), res_dict, "results.csv")
     
 
 experiments=[ 
