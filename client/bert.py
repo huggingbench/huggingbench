@@ -2,7 +2,8 @@
 import logging
 from datasets import load_dataset
 from transformers import AutoTokenizer
-from client.base import DatasetAlias, DatasetProvider
+from client.base import DatasetProvider, DatasetGen
+from hugging_bench.hugging_bench_config import Input
 
 MODEL_NAME = "bert-base-uncased"
 MODEL_VERSION = "1"
@@ -32,5 +33,22 @@ class BertDataset(DatasetProvider):
         self.dataset = dataset.with_transform(preprocess_function)
         log.info("Loaded dataset has %d samples", len(self.dataset))
 
-    def get_dataset(self) -> DatasetAlias:
-        return self.dataset
+
+class BertGenDataset(DatasetGen):
+    """ Dataset with random tensors """
+    inputs = [Input(name="input_ids", dtype="INT64", dims=[512]),
+              Input(name="attention_mask", dtype="INT64", dims=[512]),
+              Input(name="token_type_ids", dtype="INT64", dims=[512])]
+
+    def __init__(self):
+        super().__init__(BertGenDataset.inputs)
+       
+class DistilBertGenDataset(DatasetGen):
+    """ Dataset with random tensors """
+    inputs = [Input(name="input_ids", dtype="INT64", dims=[512]),
+              Input(name="attention_mask", dtype="INT64", dims=[512])]
+
+    def __init__(self):
+        super().__init__(DistilBertGenDataset.inputs)
+       
+
