@@ -6,22 +6,16 @@
 # from typing import Any
 
 from hugging_bench_config import ModelInfo
-
 from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
-import tritonclient.grpc as grpcclient
-import numpy as np  
 from types import MappingProxyType
-
 from hugging_bench_util import PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND
-import tritonclient.http as httpclient
-import numpy as np
-# from tritonclient.utils import triton_to_np_dtype
-from hugging_bench_util import dtype_np_type
-import os
+import os, logging
 import multiprocessing
 from hugging_bench_config import TritonServerSpec
 
 multiprocessing.set_start_method('spawn')
+
+LOG = logging.getLogger(__name__)
 
 class TritonConfig:
     
@@ -50,7 +44,7 @@ class TritonConfig:
         from google.protobuf import text_format
         import shutil
 
-        print(PRINT_HEADER % 'CTREAT TRITON CONFIG')
+        LOG.info(PRINT_HEADER % 'CTREAT TRITON CONFIG')
         if(not self.model_repo):
             raise Exception("No model repo is set")
         
@@ -59,7 +53,7 @@ class TritonConfig:
         conf_dir = os.path.join(self.model_repo, self.model_info.unique_name())
         
         if os.path.isdir(conf_dir):
-            print(f"Removing existing model directory: {conf_dir}")
+            LOG.info(f"Removing existing model directory: {conf_dir}")
             shutil.rmtree(conf_dir)
         
         model_dir = os.path.join(conf_dir, "1")
@@ -71,9 +65,9 @@ class TritonConfig:
         try:
             with open(config_path, 'w') as file:
                 file.write(conf_pbtxt)
-                print(f"Config written to {config_path} \n\n{conf_pbtxt}\n")
+                LOG.info(f"Config written to {config_path} \n\n{conf_pbtxt}\n")
         except Exception as e:
-            print(f"Error occurred while writing to file: {e}")
+            LOG.error(f"Error occurred while writing to file: {e}")
             raise e
         return self    
 
@@ -114,53 +108,6 @@ class TritonConfig:
             data_type=self.DTYPE_MAP.get(output.dtype, DataType.TYPE_FP32),  # Default to DataType.TYPE_FP32 if dtype not found in the mapping
             dims=output.dims) for output in self.model_info.output_shape ]
     
-
-class AnyModelTestClient:
-    """
-    This client fetches input output shape of a model from the server and generates random data for inference based on the input shape.
-
-    Args:
-        target (str): Target server address
-        model_name (str): Model name
-    """
-    def __init__(self, target, model_name) -> None:
-        self.target = target
-        self.model_name = model_name
-        print(f"Creating triton client: server={self.target} model={self.model_name} ")
-        self.triton_client = grpcclient.InferenceServerClient(url=target, verbose=False)
-
-
-    def _get_input_output_shapes(self):
-        config: ModelConfig = self.triton_client.get_model_config(self.model_name, as_json=False).config
-        self.input: ModelInput = config.input
-        self.output: ModelOutput = config.output
-    
-    def generate_data(self, dimensions, data_type):
-        type_map = {
-            'INT64': np.int64,
-            'INT32': np.int32,
-            'INT16': np.int16,
-            'FP16': np.float16,
-            'FP32': np.float32,
-            'FP64': np.float64,
-        }
-        if data_type not in type_map:
-            raise ValueError(f"Unsupported data_type {data_type}")
-        return np.random.rand(*dimensions).astype(type_map[data_type])
-        
-
-    def infer_sample(self, sequence_size=100) -> grpcclient.InferResult:
-        self._get_input_output_shapes()
-        infer_input = [ grpcclient.InferInput(i.name,  [1] + [sequence_size if dim == -1 else dim for dim in list(i.dims)] , DataType.Name(i.data_type).replace('TYPE_', '')) for i in self.input]
-        for i in infer_input:
-            data = self.generate_data(i.shape(), i.datatype())
-            i.set_data_from_numpy(data)
-        infer_output = [grpcclient.InferRequestedOutput(o.name) for o in self.output]
-        results = self.triton_client.infer(model_name=self.model_name,
-                                      inputs=infer_input,
-                                      outputs=infer_output)
-        print("Inference output shape " + str(results.as_numpy('logits').shape))
-        return results
     
     
 import docker
@@ -178,16 +125,16 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
         """
         Prints logs of a Docker container until a specific message appears or a timeout is reached.
         """
-        print(PRINT_HEADER % " TRITON SERVER LOGS ")
+        LOG.info(PRINT_HEADER % " TRITON SERVER LOGS ")
         stop_time = time.time() + timeout
         for line in container.logs(stream=True):
             log_line = line.strip().decode('utf-8')
-            print(log_line)
+            LOG.info(log_line)
             if stop_message in log_line or time.time() > stop_time:
                 break
 
     def start(self, tritonserver_docker='nvcr.io/nvidia/tritonserver:23.04-py3'):
-        print(PRINT_HEADER % " STARTING TRITON SERVER ")
+        LOG.info(PRINT_HEADER % " STARTING TRITON SERVER ")
         self.client = docker.from_env()
 
         volumes = {
@@ -213,25 +160,22 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
             )
         
                         
-        print(f"Starting container {self.container.name}")
+        LOG.info(f"Starting container {self.container.name}")
         self._print_triton_bootup_logs(self.container, 10) 
         
         return self
     
-    def test_client(self):
-        return AnyModelTestClient("localhost:8001", self.model_name)
-    
     def stop(self):
         try:
             if(not self.container):
-                print("No container found")
+                LOG.info("No container found")
             elif(self.container.status in ["running", "created"]):
                 self.container.stop()
-                print("Container stopped")
+                LOG.info("Container stopped")
             else:
-                print(f"Skipped container.stop(). container status: {self.container.status}")
+                LOG.info(f"Skipped container.stop(). container status: {self.container.status}")
             return self
         except Exception as e:
-            print(e)
+            LOG.error(e)
             return self
     

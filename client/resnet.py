@@ -3,7 +3,8 @@ from datasets import load_dataset
 from transformers import AutoConfig
 from transformers.models.resnet.configuration_resnet import ResNetOnnxConfig
 from torchvision import transforms
-from client.base import DatasetProvider, DatasetAlias
+from client.base import DatasetProvider, DatasetGen
+from hugging_bench.hugging_bench_config import Input
 
 
 MODEL_NAME = "microsoft/resnet-50"
@@ -39,5 +40,11 @@ class ResnetDataset(DatasetProvider):
             image).numpy() for image in dataset[DATASET_COLUMN_NAME]]
         return dataset
 
-    def dataset(self) -> DatasetAlias:
-        return self.dataset
+class ResnetGenDataset(DatasetGen):
+    """ Dataset with random tensors """
+    inputs = [Input(name="pixel_values", dtype="FP32", dims=[3, 224, 224])]
+
+    def __init__(self):
+        super().__init__(ResnetGenDataset.inputs)
+
+

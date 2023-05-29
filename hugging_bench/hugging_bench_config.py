@@ -12,30 +12,11 @@ class TritonServerSpec:
     http_port: int = 8000
     model_repository_dir: str = "./model_repository"
 
-
-class LoadGenerator:
-    def init(self, target, model_name):
-        pass
-    
-    def load(self):
-        pass
-
-    def close(self):
-        pass
-    
-    def summary(self):
-        return {}
-    
-    def __str__(self):
-        return self.__class__.__name__
-
-
 @dataclass
 class ExperimentSpec:
     format: str
     device: str
     half: bool
-    load_generator: LoadGenerator
 
 
 class Format(NamedTuple):

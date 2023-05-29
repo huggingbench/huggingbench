@@ -1,28 +1,29 @@
 import logging
-from client.bert import BertDataset
-from client.resnet import ResnetDataset
+from client.bert import BertDataset, BertGenDataset, DistilBertGenDataset
+from client.resnet import ResnetDataset, ResnetGenDataset
 from client.base import DatasetAlias, DatasetIterator
 from client.triton_client import TritonClient
 
 MODEL_DATASET = {'bert-base-uncased': BertDataset,
-                 'resnet50': ResnetDataset}
+                 'microsoft/resnet-50': ResnetDataset,
+                 'bert-base-uncased-gen': BertGenDataset,
+                 'microsoft/resnet-50-gen': ResnetGenDataset,
+                 'distilbert-base-uncased-gen': DistilBertGenDataset}
 
 LOG = logging.getLogger(__name__)
 
-def get_dataset( model_name: str) -> DatasetAlias:
-    clazz = MODEL_DATASET[model_name]
+def get_dataset(name: str) -> DatasetAlias:
+    clazz = MODEL_DATASET[name]
+    if clazz is None:
+        raise ValueError("No dataset found for '%s'", name)
     instance = clazz()
     return instance.get_dataset()
 
 class RunnerConfig:
-    model_name: str
-    batch_size: int
-    async_req: bool
 
-    def __init__(self, model_name: str, batch_size: int, async_req: bool) -> None:
-        self.model_name = model_name
+    def __init__(self, batch_size: int = 1, async_req: bool = False) -> None:
         self.batch_size = batch_size
-        self.async_client = async_req
+        self.async_req = async_req
 
 class Runner:
 
@@ -33,12 +34,13 @@ class Runner:
     
     def run(self):
         def send_batch(batch):
-            LOG.info("Sending batch of size %d", len(batch))
+            LOG.debug("Sending batch of size %d", len(batch))
             if self.config.async_req:
                 res = self.client.infer_batch_async(batch)
+                LOG.debug("Received response %s", res.get_result())
             else:
                 res = self.client.infer_batch(batch)
-            LOG.debug("Received response %s", res.get_response())
+                LOG.debug("Received response %s", res.get_response())
             batch.clear()
         
         batch = []

@@ -57,7 +57,7 @@ class TritonClient:
         return self.infer_batch(batched_sample)
     
     def infer_batch(self, samples) -> httpclient.InferResult:
-        return self._infer_batch(samples)
+        return self._infer_batch(samples, async_req=False)
 
     def _infer_batch(self, samples, async_req : bool = False):
         """ Runs inference on the triton server """
@@ -88,16 +88,16 @@ class TritonClient:
         infer_outputs = self._prepare_infer_outputs()
         with self.metric_infer_latency.labels(self.model, len(samples)).time():
             if async_req:
-                return self.client.infer(
+                return self.client.async_infer(
                 model_name=self.model, model_version=self.model_version,
                 inputs=infer_inputs, outputs=infer_outputs)
             else:
-                return self.client.async_infer(
+                return self.client.infer(
                     model_name=self.model, model_version=self.model_version,
                 inputs=infer_inputs, outputs=infer_outputs)
     
     def infer_batch_async(self, samples) -> httpclient.InferAsyncRequest:
-        return self.infer_batch(samples, async_req=True)
+        return self._infer_batch(samples, async_req=True)
 
 
     def _prepare_infer_inputs(self, sample) -> List[httpclient.InferInput]:
