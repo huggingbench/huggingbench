@@ -74,8 +74,9 @@ class TritonConfig:
 
 
     def _config(self, max_batch_size):
+        model_config = None
         if(self.model_info.format.format_type == "onnx"):
-            return ModelConfig(
+            model_config= ModelConfig(
                 name=self.model_info.unique_name(),
                 max_batch_size=max_batch_size,
                 input=self._model_input(),
@@ -83,7 +84,7 @@ class TritonConfig:
                 platform = self.BACKEND_MAP.get(self.model_info.format.format_type)
             )
         elif(self.model_info.format.format_type == "openvino"):
-            return ModelConfig(
+            model_config= ModelConfig(
                 name=self.model_info.unique_name(),
                 max_batch_size=max_batch_size,
                 input=self._model_input(),
@@ -101,6 +102,10 @@ class TritonConfig:
             )
         else:
             raise Exception(f"Unsupported model format {self.model_info.format.format_type}")
+        # add tags from model_info, we could add other tags as well as needed
+        for key, value in self.model_info.tags().items():
+            model_config.metric_tags[key] = value
+        return model_config
 
     
     def _model_input(self) -> ModelInput:

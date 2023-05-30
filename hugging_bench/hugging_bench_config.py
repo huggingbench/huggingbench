@@ -86,9 +86,17 @@ class ModelInfo(NamedTuple):
     def half(self):
         return self.format.half()
     
-
     def with_shapes(self, input_shape, output_shape):
         return self.__class__(self.hf_id, self.task, self.format, self.base_dir, input_shape, output_shape)
+    
+    def tags(self):
+        return {
+            'hf_id': str(self.hf_id),
+            'task': str(self.task),
+            'format': self.format.format_type,
+            'gpu': str(self.gpu_enabled()),
+            'half': str(self.half()),
+        }
 
 
 
