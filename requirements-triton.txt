@@ -1,3 +1,0 @@
-nvidia-pyindex
-polygraphy
-tritonclient[all]
