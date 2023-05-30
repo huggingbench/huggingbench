@@ -10,6 +10,7 @@ from hugging_bench_config import ExperimentSpec
 ONNX_BACKEND = "onnxruntime_onnx"
 TORCH_BACKEND = "pytorch_libtorch"
 OPENVINO_BACKEND = "openvino"
+TRT_BACKEND = "tensorrt_plan"
 PRINT_HEADER = "\n\n============================%s=====================================\n"
 
 class ModelExporter:
@@ -22,18 +23,20 @@ class ModelExporter:
         self.base_dir = base_dir if(base_dir) else os.getcwd()
         
     def export(self):
-        model_info = None
-        if(self.spec.format == "onnx"):
-            model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half)
+        #  all verations atm start with onnx    
+        model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half)
+        if(self.spec.format == "onnx"):   
+            None
         elif(self.spec.format == "openvino"):
-            model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half)
             model_info = self._export_onnx2openvino(model_info)
+        elif(self.spec.format == "trt"):
+            model_info = self._export_onnx2trt(model_info)
         else:
             raise Exception(f"Unknown format {self.spec.format}")
 
         model_info = model_info.with_shapes(
-            input_shape=hf_model_input(self.hf_id, half=model_info.half()), 
-            output_shape=hf_model_output(self.hf_id, half=model_info.half()))  
+                    input_shape=hf_model_input(self.hf_id, half=model_info.half()), 
+                    output_shape=hf_model_output(self.hf_id, half=model_info.half()))  
         
         return model_info
 
@@ -76,7 +79,7 @@ class ModelExporter:
 
     def _export_onnx2openvino(self, onnx_model_info: ModelInfo):
         print(PRINT_HEADER % " ONNX 2 OPENVINO CONVERSION ")   
-        ov_model_info = ModelInfo(onnx_model_info.hf_id, onnx_model_info.task, Format("openvino", origin=onnx_model_info), self.base_dir)
+        ov_model_info = ModelInfo(onnx_model_info.hf_id, onnx_model_info.task, Format("openvino", origin=onnx_model_info.format), self.base_dir)
         model_dir = ov_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
         
@@ -95,9 +98,32 @@ class ModelExporter:
         return ov_model_info
     
 
+    def _export_onnx2trt(self, onnx_model_info):
+        print(PRINT_HEADER % " ONNX 2 TRT CONVERSION ") 
+        trt_model_info = ModelInfo(onnx_model_info.hf_id, onnx_model_info.task, Format("trt", origin=onnx_model_info.format), self.base_dir)
+        model_dir = trt_model_info.model_dir()
+        os.makedirs(model_dir, exist_ok=True)
+
+        # inputs = hf_model_input(trt_model_info.hf_id)
+        # input_str = ' '.join([f"{input.name}:{input.dims}" for input in inputs])
+        input_str = "pixel_values:[1, 3, 224, 224]"
+        cmd = [
+            "polygraphy",
+            "convert",
+            "--model-type=onnx",
+            "--convert-to=trt",
+            f"--input-shapes={input_str}",
+            f"--output={trt_model_info.model_file_path()[0]}",
+            onnx_model_info.model_file_path()[0]
+        ]
+        print(cmd)
+        run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=cmd, gpu=True)
+        return trt_model_info
+
+
     def _inspect_onnx(self, model_info: ModelInfo):
         print(PRINT_HEADER % " ONNX MODEL INSPECTION ")
-        run_docker_sdk(image_name="polygraphy", docker_args=["polygraphy", "inspect", "model", f"{model_info.model_file_path()[0]}", "--mode=onnx"])
+        run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=["polygraphy", "inspect", "model", f"{model_info.model_file_path()[0]}", "--mode=onnx"])
         
 
 def dtype_np_type(dtype: str):

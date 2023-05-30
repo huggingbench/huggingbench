@@ -67,6 +67,8 @@ class ModelInfo(NamedTuple):
             return [os.path.join(self.model_dir(), "model.onnx")]
         elif(self.format.format_type == "openvino"):
             return [os.path.join(self.model_dir(), "model.xml"), os.path.join(self.model_dir(), "model.bin")]
+        elif(self.format.format_type == "trt"):
+            return [os.path.join(self.model_dir(), "model.plan")]
         else: 
             raise Exception("Model format is not onnx")
         
