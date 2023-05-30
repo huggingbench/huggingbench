@@ -48,9 +48,6 @@ class ExperimentRunner:
 
 experiments=[ 
     ExperimentSpec(format="onnx", device="cpu", half=False),
-    # ExperimentSpec(format="onnx", device="cuda", half=False, load_generator=FitAllModelLoadGenerator()),
-    # ExperimentSpec(format="onnx", device="cuda", half=True, load_generator=FitAllModelLoadGenerator()),3993 (trrt support)
-    # ExperimentSpec(format="openvino", device="cpu", half=False, load_generator=FitAllModelLoadGenerator()),
 ]
 
 server_spec = TritonServerSpec(model_repository_dir="./kiarash_server/model_repository")
