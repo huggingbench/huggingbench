@@ -43,7 +43,7 @@ class ExperimentRunner:
         percentile_90 = np.percentile(exec_times, 90)
         percentile_99 = np.percentile(exec_times, 99)
         res_dict = {'median': median, '90_percentile': percentile_90, '99_percentile': percentile_99}
-        append_to_csv(vars(spec), res_dict, "results.csv")
+        append_to_csv(vars(spec), res_dict, self.output)
     
 
 experiments=[ 
