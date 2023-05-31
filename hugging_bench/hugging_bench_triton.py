@@ -92,8 +92,7 @@ class TritonConfig:
                 backend = self.BACKEND_MAP.get(self.model_info.format.format_type)
             )
         elif(self.model_info.format.format_type == "trt"):
-            print(f"self.model_info.input_shape {self.model_info}")
-            return ModelConfig(
+            model_config= ModelConfig(
                 name=self.model_info.unique_name(),
                 max_batch_size=max_batch_size,
                 input=self._model_input(),

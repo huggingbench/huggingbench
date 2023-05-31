@@ -1,24 +1,9 @@
 import logging
-from client.bert import BertDataset, BertGenDataset, DistilBertGenDataset
-from client.resnet import ResnetDataset, ResnetGenDataset
 from client.base import DatasetAlias, DatasetIterator
 from client.triton_client import TritonClient
 from timeit import default_timer as timer
 
-MODEL_DATASET = {'bert-base-uncased': BertDataset,
-                 'microsoft/resnet-50': ResnetDataset,
-                 'bert-base-uncased-gen': BertGenDataset,
-                 'microsoft/resnet-50-gen': ResnetGenDataset,
-                 'distilbert-base-uncased-gen': DistilBertGenDataset}
-
 LOG = logging.getLogger(__name__)
-
-def get_dataset(name: str) -> DatasetAlias:
-    clazz = MODEL_DATASET[name]
-    if clazz is None:
-        raise ValueError("No dataset found for '%s'", name)
-    instance = clazz()
-    return instance.get_dataset()
 
 class RunnerConfig:
 

@@ -80,3 +80,9 @@ class DatasetGen(DatasetProvider):
 
     def get_dataset(self) -> DatasetAlias:
         return self.dataset
+
+
+
+class CustomDatasetGen(DatasetGen):
+    def __init__(self, inputs: list[Input]):
+        super().__init__(inputs)

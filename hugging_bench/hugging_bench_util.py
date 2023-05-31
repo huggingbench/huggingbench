@@ -1,6 +1,7 @@
 import os
 import os
 import subprocess
+import logging
 from typing import Any
 
 import numpy as np
@@ -15,6 +16,7 @@ OPENVINO_BACKEND = "openvino"
 TRT_BACKEND = "tensorrt_plan"
 PRINT_HEADER = "\n\n============================%s=====================================\n"
 
+LOG = logging.getLogger(__name__)
 class ModelExporter:
     # from util import just_export_hf_onnx_optimum_docker, convert_onnx2openvino_docker
     
@@ -47,7 +49,7 @@ class ModelExporter:
         model_info = ModelInfo(self.hf_id, self.task, Format("onnx", {"atol": atol, "device": device, "half": half}), base_dir=self.base_dir)
         
         if(all(os.path.exists(file) for file in model_info.model_file_path())): 
-            print(f"Model already exists at {model_info.model_file_path()}")
+            LOG.info(f"Model already exists at {model_info.model_file_path()}")
             return model_info
         
         model_dir = model_info.model_dir()
@@ -80,7 +82,7 @@ class ModelExporter:
 
 
     def _export_onnx2openvino(self, onnx_model_info: ModelInfo):
-        print(PRINT_HEADER % " ONNX 2 OPENVINO CONVERSION ")   
+        LOG.info(PRINT_HEADER % " ONNX 2 OPENVINO CONVERSION ")   
         ov_model_info = ModelInfo(onnx_model_info.hf_id, onnx_model_info.task, Format("openvino", origin=onnx_model_info.format), self.base_dir)
         model_dir = ov_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
@@ -101,7 +103,7 @@ class ModelExporter:
     
 
     def _export_onnx2trt(self, onnx_model_info):
-        print(PRINT_HEADER % " ONNX 2 TRT CONVERSION ") 
+        LOG.info(PRINT_HEADER % " ONNX 2 TRT CONVERSION ") 
         trt_model_info = ModelInfo(onnx_model_info.hf_id, onnx_model_info.task, Format("trt", origin=onnx_model_info.format), self.base_dir)
         model_dir = trt_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
@@ -118,13 +120,12 @@ class ModelExporter:
             f"--output={trt_model_info.model_file_path()[0]}",
             onnx_model_info.model_file_path()[0]
         ]
-        print(cmd)
         run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=cmd, gpu=True)
         return trt_model_info
 
 
     def _inspect_onnx(self, model_info: ModelInfo):
-        print(PRINT_HEADER % " ONNX MODEL INSPECTION ")
+        LOG.info(PRINT_HEADER % " ONNX MODEL INSPECTION ")
         run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=["polygraphy", "inspect", "model", f"{model_info.model_file_path()[0]}", "--mode=onnx"])
         
 
@@ -143,7 +144,7 @@ def run_docker(image_name, workspace=None, docker_args=[]):
     command = f'docker run --gpus=all -v {workspace}:{workspace} -w {workspace}  {image_name} {" ".join(docker_args)}'
     try:
         # Run command
-        print(command)
+        LOG.info(command)
 
         process = subprocess.Popen(shlex.split(command))
         # Get output and errors
@@ -284,10 +285,10 @@ def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
         writer = csv.DictWriter(f, fieldnames=fieldnames)
 
         if not file_exists:
-            print(f"Writing header to CSV file {fieldnames}")
+            LOG.info(f"Writing header to CSV file {fieldnames}")
             writer.writeheader()  # Write header only once
 
-        print(f"Writing data to CSV file: {data}")
+        LOG.info(f"Writing data to CSV file: {data}")
         writer.writerow(data)
 
 # Usage

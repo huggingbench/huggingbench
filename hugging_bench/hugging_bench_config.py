@@ -97,16 +97,3 @@ class ModelInfo(NamedTuple):
             'gpu': str(self.gpu_enabled()),
             'half': str(self.half()),
         }
-
-
-
-def test_gpu():
-    format_with_gpu = Format(format_type='openvino', origin=Format(format_type='onnx', parameters={'device': 'cpu'}))
-    # Create a ModelInfo instance with the above format
-    model_info_with_gpu = ModelInfo(
-        hf_id='some_id', 
-        task='some_task',
-        format=format_with_gpu,
-        base_dir='some_dir'
-    )
-    print(model_info_with_gpu.gpu_enabled()) # True
