@@ -2,6 +2,7 @@ import os
 import os
 import subprocess
 import logging
+from threading import Thread
 from typing import Any
 
 import numpy as np
@@ -18,7 +19,7 @@ PRINT_HEADER = "\n\n============================%s==============================
 
 LOG = logging.getLogger(__name__)
 class ModelExporter:
-    # from util import just_export_hf_onnx_optimum_docker, convert_onnx2openvino_docker
+    # export model to onnx, openvino, trt...
     
     def __init__(self, hf_id, spec: ExperimentSpec, task=None, base_dir=None) -> None:
         self.hf_id = hf_id
@@ -27,7 +28,7 @@ class ModelExporter:
         self.base_dir = base_dir if(base_dir) else os.getcwd()
         
     def export(self, model_input_path: str = None) -> ModelInfo:
-        #  all verations atm start with onnx    
+        #  onnx format is a starting point    
         model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half, model_input_path)
         model_info = model_info.with_shapes(
                     input_shape=hf_model_input(model_info.model_file_path(), half=model_info.half()), 
@@ -166,6 +167,16 @@ def run_docker(image_name, workspace=None, docker_args=[]):
     except Exception as e:
         raise e
 
+def print_container_logs(container, callback=None):
+    """
+    Prints logs of a Docker container until a specific message appears or a timeout is reached.
+    """
+    for line in container.logs(stream=True):
+        log_line = line.strip().decode('utf-8')
+        LOG.info(log_line)
+        callback(log_line) if callback else None
+
+
 
 
 def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}, model_input=None):
@@ -193,22 +204,11 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
         auto_remove=True
         )
     
-    def _print_triton_bootup_logs(container, timeout, stop_message="Started Metrics Service"):
-        """
-        Prints logs of a Docker container until a specific message appears or a timeout is reached.
-        """
-        import time
-        stop_time = time.time() + timeout
-        for line in container.logs(stream=True):
-            log_line = line.strip().decode('utf-8')
-            LOG.info(log_line)
-            if stop_message in log_line or time.time() > stop_time or container.status in ["not-running", "next-exit", "removed", "exited"]:
-                break
-    _print_triton_bootup_logs(container, timeout=100)
+    t = Thread(target = print_container_logs, args=[container])
+    t.start()
     exit_code = container.wait()
     LOG.info(f"Docker container exit code {exit_code}")
     return exit_code
-
 
 
 from hugging_bench_config import Input, Output

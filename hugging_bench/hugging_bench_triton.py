@@ -5,10 +5,12 @@
 
 # from typing import Any
 
+from threading import Thread
+import threading
 from hugging_bench_config import ModelInfo
 from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
 from types import MappingProxyType
-from hugging_bench_util import PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND, TRT_BACKEND
+from hugging_bench_util import PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND, TRT_BACKEND, print_container_logs
 import os, logging
 import multiprocessing
 from hugging_bench_config import TritonServerSpec
@@ -134,17 +136,6 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
         self.gpu = triton_config.model_info.gpu_enabled()
         self.container = None
 
-    def _print_triton_bootup_logs(self, container, timeout, stop_message="Started Metrics Service"):
-        """
-        Prints logs of a Docker container until a specific message appears or a timeout is reached.
-        """
-        LOG.info(PRINT_HEADER % " TRITON SERVER LOGS ")
-        stop_time = time.time() + timeout
-        for line in container.logs(stream=True):
-            log_line = line.strip().decode('utf-8')
-            LOG.info(log_line)
-            if stop_message in log_line or time.time() > stop_time:
-                break
 
     def start(self, tritonserver_docker='nvcr.io/nvidia/tritonserver:23.04-py3'):
         LOG.info(PRINT_HEADER % " STARTING TRITON SERVER ")
@@ -174,8 +165,13 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
         
                         
         LOG.info(f"Starting container {self.container.name}")
-        self._print_triton_bootup_logs(self.container, 100) 
-        
+        wait_event = threading.Event()
+        def container_ready(log_line):
+            if "Started Metrics Service" in log_line:
+                wait_event.set()
+        t = Thread(target= print_container_logs, args=[self.container, container_ready])
+        t.start()
+        wait_event.wait()
         return self
     
     def stop(self):
