@@ -162,7 +162,7 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
 
         self.container = self.client.containers.run(
             tritonserver_docker,
-            command=["tritonserver", "--model-repository=/models"],
+            command=["tritonserver", "--model-repository=/models", "--model-control-mode=explicit", f"--load-model={self.model_name}"],
             volumes=volumes,
             cpu_count= 0 if (self.gpu) else self.no_processor,
             device_requests=[
