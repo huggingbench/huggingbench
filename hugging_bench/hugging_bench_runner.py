@@ -61,15 +61,18 @@ experiments=[
 
 server_spec = TritonServerSpec(model_repository_dir="./kiarash_server/model_repository")
 
-resnet50_gen_dataset = get_dataset("microsoft/resnet-50-gen")
-bert_gen_dataset = get_dataset("bert-base-uncased-gen")
-ExperimentRunner("microsoft/resnet-50", resnet50_gen_dataset, experiments, server_spec).run()
-# ExperimentRunner("bert-base-uncased", bert_gen_dataset, experiments, server_spec).run()
+# cover all models with random data
 ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None).run()
-# ExperimentRunner("xlm-roberta-base", experiments, server_spec, dataset=None).run()
 ExperimentRunner("bert-base-uncased", experiments, server_spec, dataset=None).run()
 ExperimentRunner("distilbert-base-uncased", experiments, server_spec, dataset=None).run()
-ExperimentRunner("microsoft/resnet-50-gen", experiments, server_spec, dataset=None).run()
+
+# resnet50_gen_dataset = get_dataset("microsoft/resnet-50-gen")
+# bert_gen_dataset = get_dataset("bert-base-uncased-gen")
+# ExperimentRunner("microsoft/resnet-50", resnet50_gen_dataset, experiments, server_spec).run()
+# ExperimentRunner("bert-base-uncased", bert_gen_dataset, experiments, server_spec).run()
+
+# ExperimentRunner("xlm-roberta-base", experiments, server_spec, dataset=None).run()
+
 # ExperimentRunner("bert-base-uncased", experiments, server_spec).run()
 # ExperimentRunner("distilbert-base-uncased", experiments, server_spec).run()
 # ExperimentRunner("microsoft/resnet-50", experiments, server_spec).run()
