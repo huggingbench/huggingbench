@@ -57,6 +57,11 @@ class ExperimentRunner:
     
 
 experiments=[ 
+    ExperimentSpec(format="trt", device="cuda", half=True),
+    ExperimentSpec(format="trt", device="cuda", half=False),
+
+    ExperimentSpec(format="onnx", device="cuda", half=True),   
+    ExperimentSpec(format="onnx", device="cuda", half=False),
     ExperimentSpec(format="onnx", device="cpu", half=False),
 ]
 
