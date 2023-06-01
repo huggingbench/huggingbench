@@ -18,10 +18,10 @@ class ExperimentSpec:
     device: str
     half: bool
 
-
-class Format(NamedTuple):
+@dataclass
+class Format:
     format_type: str # onnx, openvino, torchscript, tensorflow
-    parameters: dict = {}
+    parameters: dict = field(default_factory=dict)
     origin: 'Format' = None
 
     def gpu_enabled(self):
@@ -34,26 +34,26 @@ class Format(NamedTuple):
             return True
         return False
 
-
-class Input(NamedTuple):
+@dataclass
+class Input:
     name: str
     dtype: str
     dims: list[int]
     
-
-class Output(NamedTuple):
+@dataclass
+class Output:
     name: str
     dtype: str
     dims: list[int]
  
-
-class ModelInfo(NamedTuple):
+@dataclass
+class ModelInfo:
     hf_id: str
     task: str
     format: Format
     base_dir: str
-    input_shape: list[Input] = field(init=False)
-    output_shape: list[Output] = field(init=False)
+    input_shape: list[Input] =  field(default_factory=list)  
+    output_shape: list[Output] = field(default_factory=list)
 
     def unique_name(self):
         params_str = f"-{self.param_str()}" if(self.param_str()) else ""
@@ -97,3 +97,5 @@ class ModelInfo(NamedTuple):
             'gpu': str(self.gpu_enabled()),
             'half': str(self.half()),
         }
+
+
