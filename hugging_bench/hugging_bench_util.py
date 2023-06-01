@@ -243,6 +243,7 @@ def hf_model_input(onnx_model_path: str, half=False):
     for input_name, input_metadata in input_metadata_dict.items():
         dims = [get_dim_value(dim) for dim in input_metadata.shape if dim != "batch_size"]
         dtype = str(input_metadata.dtype).upper()
+        dtype=format_dtype(dtype)
         inputs.append(Input(name=input_name, dtype=dtype, dims=dims))
 
     return list(map(half_fp32, inputs)) if half else inputs
@@ -255,10 +256,19 @@ def hf_model_output(onnx_model_path: str, half=False):
     for output_name, output_metadata in output_metadata_dict.items():
         dims = [get_dim_value(dim) for dim in list(output_metadata.shape) if dim != "batch_size"]
         dtype = str(output_metadata.dtype).upper()
+        dtype=format_dtype(dtype)
         outputs.append(Output(name=output_name, dtype=dtype, dims=dims))
     
     return list(map(half_fp32, outputs)) if half else outputs
 
+
+def format_dtype(dtype):
+    if(dtype=='FLOAT32'):
+        return "FP32"
+    elif(dtype=='FLOAT16'):
+        return "FP16"
+    else:
+        return dtype
 
 import csv
 from typing import NamedTuple, Dict
@@ -327,5 +337,9 @@ def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
 
 
 # run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=["polygraphy", "inspect", "model", "/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx", "--mode=onnx"], env={"POLYGRAPHY_AUTOINSTALL_DEPS": "1"})
-# hf_model_output("/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx")
-# hf_model_input("/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx")
+a=hf_model_output("/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx", True)
+print(a)
+print(list(map(half_fp32, a)))
+
+b=hf_model_input("/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx", True)
+print(b)
