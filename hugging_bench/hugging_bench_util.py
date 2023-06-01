@@ -26,9 +26,9 @@ class ModelExporter:
         self.task = task
         self.base_dir = base_dir if(base_dir) else os.getcwd()
         
-    def export(self) -> ModelInfo:
+    def export(self, model_input_path: str = None) -> ModelInfo:
         #  all verations atm start with onnx    
-        model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half)
+        model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half, model_input_path)
         model_info = model_info.with_shapes(
                     input_shape=hf_model_input(model_info.model_file_path(), half=model_info.half()), 
                     output_shape=hf_model_output(model_info.model_file_path(), half=model_info.half()))  
@@ -46,7 +46,7 @@ class ModelExporter:
         LOG.info(f"Model info {model_info}")
         return model_info
 
-    def _export_hf2onnx(self, atol=0.001, device=None, half=False) -> ModelInfo:
+    def _export_hf2onnx(self, atol=0.001, device=None, half=False, model_input:str = None) -> ModelInfo:
         print(PRINT_HEADER % " ONNX EXPORT ")
         model_info = ModelInfo(self.hf_id, self.task, Format("onnx", {"atol": atol, "device": device, "half": half}), base_dir=self.base_dir)
         
@@ -57,9 +57,11 @@ class ModelExporter:
         model_dir = model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
 
+        model_arg = f"--model={self.hf_id}" if model_input is None else f"--model=/model_input"
+
         cmd = [
             "optimum-cli", "export", "onnx",
-            f"--model={self.hf_id}", 
+            model_arg, 
             "--framework=pt",
             "--monolit", 
             f"--atol={atol}"]
@@ -78,7 +80,7 @@ class ModelExporter:
         
         cmd.append(model_info.model_dir())
         
-        run_docker_sdk("optimum", model_dir, cmd, model_info.gpu_enabled())
+        run_docker_sdk("optimum", model_dir, cmd, model_info.gpu_enabled(), model_input=model_input)
         
         return model_info
 
@@ -166,7 +168,7 @@ def run_docker(image_name, workspace=None, docker_args=[]):
 
 
 
-def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}):
+def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}, model_input=None):
     import docker
     client = docker.from_env()
 
@@ -174,7 +176,8 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
         workspace = os.getcwd()
 
     volumes = {
-        workspace: {'bind': workspace, 'mode': 'rw'}
+        workspace: {'bind': workspace, 'mode': 'rw'},
+        model_input: {'bind': "/model_input", 'mode': 'rw'}
     }
 
     LOG.info(f"Running Docker container {image_name} gpu: {gpu} with command: {docker_args}")

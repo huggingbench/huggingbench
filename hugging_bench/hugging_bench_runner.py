@@ -9,12 +9,13 @@ from client.datasets import get_dataset
 import os
 
 class ExperimentRunner:
-    def __init__(self, hf_id: str, experiments: list[ExperimentSpec], server_spec: TritonServerSpec, dataset: DatasetAlias=None, task=None) -> None:
+    def __init__(self, hf_id: str, experiments: list[ExperimentSpec], server_spec: TritonServerSpec, dataset: DatasetAlias=None, task=None, model_local_path: str = None) -> None:
         self.hf_id = hf_id
         self.task = task
         self.dataset = dataset
         self.output = self.hf_id.replace("/", "-") + ".csv"
         self.experiments = experiments
+        self.model_local_path = model_local_path
         
         self.server_spec = server_spec
         self.server_spec.model_repository_dir = os.path.abspath(server_spec.model_repository_dir)
@@ -23,7 +24,7 @@ class ExperimentRunner:
     def run(self):
         for spec in self.experiments:
             exporter = ModelExporter(self.hf_id, spec, self.task)
-            model_info = exporter.export()
+            model_info = exporter.export(self.model_local_path)
             triton_config = TritonConfig(self.server_spec, model_info).create_model_repo()
             triton_server = TritonServer(triton_config)
             triton_server.start()
@@ -57,21 +58,21 @@ class ExperimentRunner:
     
 
 experiments=[ 
-    ExperimentSpec(format="trt", device="cuda", half=True),
-    ExperimentSpec(format="trt", device="cuda", half=False),
+    # ExperimentSpec(format="trt", device="cuda", half=True),
+    # ExperimentSpec(format="trt", device="cuda", half=False),
 
-    ExperimentSpec(format="onnx", device="cuda", half=True),   
-    ExperimentSpec(format="onnx", device="cuda", half=False),
+    # ExperimentSpec(format="onnx", device="cuda", half=True),   
+    # ExperimentSpec(format="onnx", device="cuda", half=False),
     ExperimentSpec(format="onnx", device="cpu", half=False),
 ]
 
 server_spec = TritonServerSpec(model_repository_dir="./kiarash_server/model_repository")
 
 # cover all models with random data
-ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None).run()
-ExperimentRunner("bert-base-uncased", experiments, server_spec, dataset=None).run()
-ExperimentRunner("distilbert-base-uncased", experiments, server_spec, dataset=None).run()
-ExperimentRunner("facebook/bart-large", experiments, server_spec, dataset=None, task='feature-extraction').run()
+# ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None).run()
+ExperimentRunner("bert-base-uncased", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/.cache/huggingface/hub/models--bert-base-uncased/snapshots/0a6aa9128b6194f4f3c4db429b6cb4891cdb421b").run()
+# ExperimentRunner("distilbert-base-uncased", experiments, server_spec, dataset=None).run()
+# ExperimentRunner("facebook/bart-large", experiments, server_spec, dataset=None, task='feature-extraction').run()
 
 
 # resnet50_gen_dataset = get_dataset("microsoft/resnet-50-gen")
