@@ -29,6 +29,10 @@ class ModelExporter:
     def export(self) -> ModelInfo:
         #  all verations atm start with onnx    
         model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half)
+        model_info = model_info.with_shapes(
+                    input_shape=hf_model_input(model_info.model_file_path(), half=model_info.half()), 
+                    output_shape=hf_model_output(model_info.model_file_path(), half=model_info.half()))  
+        
         if(self.spec.format == "onnx"):   
             None
         elif(self.spec.format == "openvino"):
@@ -37,10 +41,6 @@ class ModelExporter:
             model_info = self._export_onnx2trt(model_info)
         else:
             raise Exception(f"Unknown format {self.spec.format}")
-
-        model_info = model_info.with_shapes(
-                    input_shape=hf_model_input(model_info.model_file_path(), half=model_info.half()), 
-                    output_shape=hf_model_output(model_info.model_file_path(), half=model_info.half()))  
         
         return model_info
 
@@ -83,7 +83,13 @@ class ModelExporter:
 
     def _export_onnx2openvino(self, onnx_model_info: ModelInfo):
         LOG.info(PRINT_HEADER % " ONNX 2 OPENVINO CONVERSION ")   
-        ov_model_info = ModelInfo(onnx_model_info.hf_id, onnx_model_info.task, Format("openvino", origin=onnx_model_info.format), self.base_dir)
+        ov_model_info = ModelInfo(
+            onnx_model_info.hf_id, 
+            onnx_model_info.task, 
+            format=Format("openvino", origin=onnx_model_info.format), 
+            base_dir=self.base_dir, 
+            input_shape=onnx_model_info.input_shape,
+            output_shape=onnx_model_info.output_shape)
         model_dir = ov_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
         
@@ -104,13 +110,20 @@ class ModelExporter:
 
     def _export_onnx2trt(self, onnx_model_info):
         LOG.info(PRINT_HEADER % " ONNX 2 TRT CONVERSION ") 
-        trt_model_info = ModelInfo(onnx_model_info.hf_id, onnx_model_info.task, Format("trt", origin=onnx_model_info.format), self.base_dir)
+        trt_model_info = ModelInfo(
+            onnx_model_info.hf_id, 
+            onnx_model_info.task, 
+            Format("trt", origin=onnx_model_info.format), 
+            self.base_dir,
+            input_shape=onnx_model_info.input_shape,
+            output_shape=onnx_model_info.output_shape)
+        
         model_dir = trt_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
 
-        # inputs = hf_model_input(trt_model_info.hf_id)
-        # input_str = ' '.join([f"{input.name}:{input.dims}" for input in inputs])
-        input_str = "pixel_values:[1, 3, 224, 224]"
+        inputs = hf_model_input(trt_model_info.hf_id)
+        input_str = ' '.join([f"{input.name}:{input.dims}" for input in inputs])
+
         cmd = [
             "polygraphy",
             "convert",
@@ -204,7 +217,7 @@ from polygraphy.backend.onnx.util import get_input_metadata, get_output_metadata
 
 SHAPE_MAP = {
     "batch_size": 1,
-    "sequence_length": 200,
+    "sequence_length": -1,
     "width": 224,
     "height": 224,
     "channels": 3,
@@ -306,3 +319,12 @@ def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
 
 # print(hf_model_input("microsoft/resnet-50", half=True))
 # print(hf_model_output("microsoft/resnet-50", half=True))
+
+
+
+# a = hf_model_input("/Users/kiarash/code/mlperf/microsoft-resnet-50-None-onnx-0.001-False-cpu/model.onnx", half=True)
+
+# o = hf_model_output("/Users/kiarash/code/mlperf/microsoft-resnet-50-None-onnx-0.001-False-cpu/model.onnx", half=True)
+# print(a)
+# print(o)
+# ModelExporter("bert-base-cased", ExperimentSpec("trt", "cuda", True)).export()
