@@ -8,6 +8,10 @@ pip install colored polygraphy==0.47.1 --extra-index-url https://pypi.ngc.nvidia
 python3 -m pip install -e .
 ```
 
+#### Test
+run
+`pytest`
+
 ### inspect input output shape
 `polygraphy inspect model model.onnx --mode=onnx`
 no pytorch support but there are other ways surely!!!?

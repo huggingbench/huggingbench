@@ -19,5 +19,7 @@ setup(
         'numpy==1.24.3',  
         'onnx==1.14.0'
     ],
-    python_requires='>=3.9'
+    python_requires='>=3.9',
+    tests_require=['pytest'],
+    setup_requires=['pytest-runner']
 )
