@@ -75,9 +75,9 @@ class ModelInfo(NamedTuple):
     
     def param_str(self):
         format_params = '-'.join(sorted(map(str, self.format.parameters.values())))
-        # if self.format.origin:
-            # origin_params = '-'.join(sorted(map(str, self.format.origin.parameters.values())))
-            # format_params += '-' + origin_params
+        if self.format.origin:
+            origin_params = '-'.join(sorted(map(str, self.format.origin.parameters.values())))
+            format_params += origin_params
         return format_params
     
     def gpu_enabled(self):
