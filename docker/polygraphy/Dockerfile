@@ -7,7 +7,7 @@ FROM python:3.9
 
 ENV POLYGRAPHY_AUTOINSTALL_DEPS=1
 RUN python -m pip install --upgrade pip
-RUN python -m pip install nvidia-pyindex==1.0.9
+RUN python -m polygraphy
 RUN python -m pip install colored polygraphy==0.47.1 --extra-index-url https://pypi.ngc.nvidia.com
 
 CMD []

@@ -45,7 +45,7 @@ class TritonConfig:
         from google.protobuf import text_format
         import shutil
 
-        LOG.info(PRINT_HEADER % 'CTREAT TRITON CONFIG')
+        LOG.info(PRINT_HEADER % 'CTREATE TRITON MODEL CONFIG')
         if(not self.model_repo):
             raise Exception("No model repo is set")
         
@@ -59,8 +59,8 @@ class TritonConfig:
         
         model_dir = os.path.join(conf_dir, "1")
         os.makedirs(model_dir, exist_ok=True)
-    
-        [shutil.copy(file, model_dir) for file in self.model_info.model_file_path()]
+
+        shutil.copy(self.model_info.model_file_path(), model_dir)
         
         config_path = os.path.join(conf_dir, "config.pbtxt")
         try:
@@ -122,7 +122,6 @@ class TritonConfig:
             name=output.name,
             data_type=self.DTYPE_MAP.get(output.dtype, DataType.TYPE_FP32),  # Default to DataType.TYPE_FP32 if dtype not found in the mapping
             dims=output.dims) for output in self.model_info.output_shape ]
-    
     
     
 import docker

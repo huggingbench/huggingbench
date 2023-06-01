@@ -1,6 +1,6 @@
 import numpy as np
 from client.base import DatasetAlias
-from hugging_bench_util import ModelExporter, measure_execution_time, append_to_csv
+from hugging_bench_util import ModelExporter, append_to_csv
 from hugging_bench_config import ExperimentSpec, TritonServerSpec
 from hugging_bench_triton import TritonConfig, TritonServer
 from client.triton_client import TritonClient
@@ -53,8 +53,9 @@ experiments=[
 server_spec = TritonServerSpec(model_repository_dir="./kiarash_server/model_repository")
 
 resnet50_gen_dataset = get_dataset("microsoft/resnet-50-gen")
+bert_gen_dataset = get_dataset("bert-base-uncased-gen")
 ExperimentRunner("microsoft/resnet-50", resnet50_gen_dataset, experiments, server_spec).run()
-# ExperimentRunner("bert-base-uncased", experiments, server_spec).run()
+# ExperimentRunner("bert-base-uncased", bert_gen_dataset, experiments, server_spec).run()
 # ExperimentRunner("distilbert-base-uncased", experiments, server_spec).run()
 # ExperimentRunner("microsoft/resnet-50", experiments, server_spec).run()
 # ExperimentRunner("bert-base-uncased", "./kiarash_server/model_repository", experiments).run()

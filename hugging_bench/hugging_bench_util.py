@@ -3,6 +3,8 @@ import os
 import subprocess
 from typing import Any
 
+import numpy as np
+
 from hugging_bench_config import Format, ModelInfo
 from hugging_bench_config import ExperimentSpec
 # from model_config_constants import *
@@ -22,7 +24,7 @@ class ModelExporter:
         self.task = task
         self.base_dir = base_dir if(base_dir) else os.getcwd()
         
-    def export(self):
+    def export(self) -> ModelInfo:
         #  all verations atm start with onnx    
         model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half)
         if(self.spec.format == "onnx"):   
@@ -35,12 +37,12 @@ class ModelExporter:
             raise Exception(f"Unknown format {self.spec.format}")
 
         model_info = model_info.with_shapes(
-                    input_shape=hf_model_input(self.hf_id, half=model_info.half()), 
-                    output_shape=hf_model_output(self.hf_id, half=model_info.half()))  
+                    input_shape=hf_model_input(model_info.model_file_path(), half=model_info.half()), 
+                    output_shape=hf_model_output(model_info.model_file_path(), half=model_info.half()))  
         
         return model_info
 
-    def _export_hf2onnx(self, atol=0.001, device=None, half=False):
+    def _export_hf2onnx(self, atol=0.001, device=None, half=False) -> ModelInfo:
         print(PRINT_HEADER % " ONNX EXPORT ")
         model_info = ModelInfo(self.hf_id, self.task, Format("onnx", {"atol": atol, "device": device, "half": half}), base_dir=self.base_dir)
         
@@ -193,80 +195,59 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False):
 
     return container.wait()
 
-import timeit
-import numpy as np
 
-def measure_execution_time(func, num_executions) -> dict:
-    """
-    Executes a function a specified number of times and measures the execution time.
-
-    Parameters
-    ----------
-    func : callable
-        The function to execute.
-    num_executions : int
-        The number of times to execute the function.
-
-    Returns
-    -------
-    dict
-        A dictionary with keys 'median', '90_percentile' and '99_percentile' indicating 
-        the execution time for median, 90th percentile and 99th percentile, respectively.
-    """
-    # Create a list to store execution times
-    execution_times = []
-
-    # Execute the function and measure execution time
-    for _ in range(num_executions):
-        start_time = timeit.default_timer()
-        func()
-        end_time = timeit.default_timer()
-        execution_time = end_time - start_time
-
-        # Store the execution time
-        execution_times.append(execution_time)
-
-    # Convert execution times to a numpy array
-    execution_times = np.array(execution_times)
-
-    # Calculate percentiles
-    median = np.median(execution_times)
-    percentile_90 = np.percentile(execution_times, 90)
-    percentile_99 = np.percentile(execution_times, 99)
-
-    return {'median': median, '90_percentile': percentile_90, '99_percentile': percentile_99}
 
 from hugging_bench_config import Input, Output
+import onnx
+from polygraphy.backend.onnx.util import get_input_metadata, get_output_metadata
+
+SHAPE_MAP = {
+    "batch_size": 1,
+    "sequence_length": 200,
+    "width": 224,
+    "height": 224,
+    "channels": 3,
+    "num_channels": 3,
+    "audio_sequence_length": 16000,
+    "nb_max_frames": 3000,
+    "feature_size": 80,
+}
+
+def get_dim_value(dim):
+    if isinstance(dim, int) or dim.isnumeric():
+        return int(dim)
+    value = SHAPE_MAP.get(dim, None)
+    print(f"dim: {dim}, value: {value}")
+    if value is None:
+        raise ValueError(f"Dimension {dim} not found in SHAPE_MAP")
+    return value
 
 def half_fp32(input):
     new_input = input._replace(dtype = "FP16" if input.dtype=="FP32" else input.dtype)
     return new_input
 
-def hf_model_input(hf_id, task=None, sequence_length=-1, half=False):
-    INPUTS = {
-        "microsoft/resnet-50": [Input(name="pixel_values", dtype="FP32", dims=[3, 224, 224])],
-        "bert-base-uncased": [
-            Input(name="input_ids", dtype="INT64", dims=[sequence_length]),
-            Input(name="attention_mask", dtype="INT64", dims=[sequence_length]),
-            Input(name="token_type_ids", dtype="INT64", dims=[sequence_length]),
-        ],
-        "distilbert-base-uncased": [
-            Input(name="input_ids", dtype="INT64", dims=[sequence_length]),
-            Input(name="attention_mask", dtype="INT64", dims=[sequence_length]),
-        ]
-    }
+def hf_model_input(onnx_model_path: str, half=False):
+    onnx_model = onnx.load(onnx_model_path)
+    input_metadata_dict = get_input_metadata(onnx_model.graph)
+    inputs = []
+    for input_name, input_metadata in input_metadata_dict.items():
+        dims = [get_dim_value(dim) for dim in input_metadata.shape if dim != "batch_size"]
+        dtype = str(input_metadata.dtype).upper()
+        inputs.append(Input(name=input_name, dtype=dtype, dims=dims))
 
-    return list(map(half_fp32, INPUTS[hf_id])) if half else INPUTS[hf_id]
+    return list(map(half_fp32, inputs)) if half else inputs
 
 
-def hf_model_output(hf_id, task=None, sequence_length=-1, half=False):
-    OUTPUTS = {
-        "microsoft/resnet-50": [Output(name="logits", dtype="FP32", dims=[1000])],
-        "bert-base-uncased": [Output(name="logits", dtype="FP32", dims=[sequence_length, 30522])],
-        "distilbert-base-uncased": [Output(name="logits", dtype="FP32", dims=[sequence_length, 30522])]
-    }
+def hf_model_output(onnx_model_path: str, half=False):
+    onnx_model = onnx.load(onnx_model_path)
+    output_metadata_dict = get_output_metadata(onnx_model.graph)
+    outputs = []
+    for output_name, output_metadata in output_metadata_dict.items():
+        dims = [get_dim_value(dim) for dim in list(output_metadata.shape) if dim != "batch_size"]
+        dtype = str(output_metadata.dtype).upper()
+        outputs.append(Output(name=output_name, dtype=dtype, dims=dims))
     
-    return list(map(half_fp32, OUTPUTS[hf_id])) if half else OUTPUTS[hf_id]
+    return list(map(half_fp32, outputs)) if half else outputs
 
 
 import csv
@@ -322,5 +303,5 @@ def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
 # results = measure_execution_time(my_function, 100)
 # print(results)
 
-print(hf_model_input("microsoft/resnet-50", half=True))
-print(hf_model_output("microsoft/resnet-50", half=True))
+# print(hf_model_input("microsoft/resnet-50", half=True))
+# print(hf_model_output("microsoft/resnet-50", half=True))

@@ -1,0 +1,11 @@
+global:
+  scrape_interval:  200ms # Benchmark runs are short lived, so we want to scrape frequently.
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 1s
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'triton+client'
+    static_configs:
+      - targets: ['host.docker.internal:8002', 'host.docker.internal:8001'] # triton  and locust client metric
