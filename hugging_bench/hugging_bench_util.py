@@ -313,37 +313,3 @@ def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
 
         LOG.info(f"Writing data to CSV file: {data}")
         writer.writerow(data)
-
-# Usage
-# spec = Spec('png', 'cpu', False)
-# info = {'additional_field': 'additional_value'}
-# append_to_csv(spec, info, 'output.csv')
-
-# # Usage
-# def my_function():
-#     for _ in range(1000000):
-#         pass
-
-# results = measure_execution_time(my_function, 100)
-# print(results)
-
-# print(hf_model_input("microsoft/resnet-50", half=True))
-# print(hf_model_output("microsoft/resnet-50", half=True))
-
-
-
-# a = hf_model_input("/Users/kiarash/code/mlperf/microsoft-resnet-50-None-onnx-0.001-False-cpu/model.onnx", half=True)
-
-# o = hf_model_output("/Users/kiarash/code/mlperf/microsoft-resnet-50-None-onnx-0.001-False-cpu/model.onnx", half=True)
-# print(a)
-# print(o)
-# ModelExporter("bert-base-cased", ExperimentSpec("trt", "cuda", True)).export()
-
-
-# run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=["polygraphy", "inspect", "model", "/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx", "--mode=onnx"], env={"POLYGRAPHY_AUTOINSTALL_DEPS": "1"})
-a=hf_model_output("/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx", True)
-print(a)
-print(list(map(half_fp32, a)))
-
-b=hf_model_input("/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx", True)
-print(b)
