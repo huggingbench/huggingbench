@@ -17,6 +17,7 @@ setup(
         'transformers==4.29.2',
         'torchvision==0.15.2',
         'numpy==1.24.3',  
+        'onnx==1.14.0'
     ],
     python_requires='>=3.9'
 )
