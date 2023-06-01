@@ -117,8 +117,7 @@ class ModelExporter:
         model_dir = trt_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
 
-        inputs = hf_model_input(trt_model_info.hf_id)
-        input_str = ' '.join([f"{input.name}:{input.dims}" for input in inputs])
+        input_str = ' '.join([f"{input.name}:{input.dims}" for input in trt_model_info.input_shape])
 
         cmd = [
             "polygraphy",
