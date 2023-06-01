@@ -33,6 +33,7 @@ class ModelExporter:
                     input_shape=hf_model_input(model_info.model_file_path(), half=model_info.half()), 
                     output_shape=hf_model_output(model_info.model_file_path(), half=model_info.half()))  
         
+        
         if(self.spec.format == "onnx"):   
             None
         elif(self.spec.format == "openvino"):
@@ -42,6 +43,7 @@ class ModelExporter:
         else:
             raise Exception(f"Unknown format {self.spec.format}")
         
+        LOG.info(f"Model info {model_info}")
         return model_info
 
     def _export_hf2onnx(self, atol=0.001, device=None, half=False) -> ModelInfo:
@@ -99,12 +101,6 @@ class ModelExporter:
             f"--output_dir={model_dir}"
         ]
         run_docker_sdk(image_name="openvino", docker_args=cmd)
-        #  for mocking purposes
-        # def create_empty_file(path):
-        #     with open(path, 'w'):
-        #         pass
-        # create_empty_file(os.path.join(model_dir, "model.xml"))
-        # create_empty_file(os.path.join(model_dir, "model.bin"))
         return ov_model_info
     
 
@@ -139,7 +135,7 @@ class ModelExporter:
 
     def _inspect_onnx(self, model_info: ModelInfo):
         LOG.info(PRINT_HEADER % " ONNX MODEL INSPECTION ")
-        run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=["polygraphy", "inspect", "model", f"{model_info.model_file_path()[0]}", "--mode=onnx"])
+        run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=["polygraphy", "inspect", "model", f"{model_info.model_file_path()[0]}", "--mode=onnx"], env={"POLYGRAPHY_AUTOINSTALL_DEPS": 1})
         
 
 def dtype_np_type(dtype: str):
@@ -171,7 +167,7 @@ def run_docker(image_name, workspace=None, docker_args=[]):
 
 
 
-def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False):
+def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}):
     import docker
     client = docker.from_env()
 
@@ -182,6 +178,7 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False):
         workspace: {'bind': workspace, 'mode': 'rw'}
     }
 
+    LOG.info(f"Running Docker container {image_name} gpu: {gpu} with command: {docker_args}")
     container = client.containers.run(
         image_name,
         command=docker_args,
@@ -190,6 +187,7 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False):
                     docker.types.DeviceRequest(device_ids=["0"], capabilities=[['gpu']])] if gpu else [],
         working_dir=workspace,
         detach=True,
+        environment=env,
         auto_remove=True
         )
     
@@ -201,13 +199,13 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False):
         stop_time = time.time() + timeout
         for line in container.logs(stream=True):
             log_line = line.strip().decode('utf-8')
-            print(log_line)
-            print(container.status)
-            if stop_message in log_line or time.time() > stop_time or container.status in ["running", "created"]:
+            LOG.info(log_line)
+            if stop_message in log_line or time.time() > stop_time or container.status in ["not-running", "next-exit", "removed", "exited"]:
                 break
     _print_triton_bootup_logs(container, timeout=100)
-
-    return container.wait()
+    exit_code = container.wait()
+    LOG.info(f"Docker container exit code {exit_code}")
+    return exit_code
 
 
 
@@ -230,8 +228,7 @@ SHAPE_MAP = {
 def get_dim_value(dim):
     if isinstance(dim, int) or dim.isnumeric():
         return int(dim)
-    value = SHAPE_MAP.get(dim, None)
-    print(f"dim: {dim}, value: {value}")
+    value = SHAPE_MAP.get(dim, -1)
     if value is None:
         raise ValueError(f"Dimension {dim} not found in SHAPE_MAP")
     return value
@@ -328,3 +325,8 @@ def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
 # print(a)
 # print(o)
 # ModelExporter("bert-base-cased", ExperimentSpec("trt", "cuda", True)).export()
+
+
+# run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=["polygraphy", "inspect", "model", "/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx", "--mode=onnx"], env={"POLYGRAPHY_AUTOINSTALL_DEPS": "1"})
+# hf_model_output("/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx")
+# hf_model_input("/Users/kiarash/code/mlperf/facebook-bart-large-feature-extraction-onnx-0.001-False-cpu/model.onnx")

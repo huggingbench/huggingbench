@@ -9,8 +9,9 @@ from client.datasets import get_dataset
 import os
 
 class ExperimentRunner:
-    def __init__(self, hf_id: str, experiments: list[ExperimentSpec], server_spec: TritonServerSpec, dataset: DatasetAlias=None) -> None:
+    def __init__(self, hf_id: str, experiments: list[ExperimentSpec], server_spec: TritonServerSpec, dataset: DatasetAlias=None, task=None) -> None:
         self.hf_id = hf_id
+        self.task = task
         self.dataset = dataset
         self.output = self.hf_id.replace("/", "-") + ".csv"
         self.experiments = experiments
@@ -21,7 +22,7 @@ class ExperimentRunner:
     
     def run(self):
         for spec in self.experiments:
-            exporter = ModelExporter(self.hf_id, spec)
+            exporter = ModelExporter(self.hf_id, spec, self.task)
             model_info = exporter.export()
             triton_config = TritonConfig(self.server_spec, model_info).create_model_repo()
             triton_server = TritonServer(triton_config)
@@ -65,6 +66,8 @@ server_spec = TritonServerSpec(model_repository_dir="./kiarash_server/model_repo
 ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None).run()
 ExperimentRunner("bert-base-uncased", experiments, server_spec, dataset=None).run()
 ExperimentRunner("distilbert-base-uncased", experiments, server_spec, dataset=None).run()
+ExperimentRunner("facebook/bart-large", experiments, server_spec, dataset=None, task='feature-extraction').run()
+
 
 # resnet50_gen_dataset = get_dataset("microsoft/resnet-50-gen")
 # bert_gen_dataset = get_dataset("bert-base-uncased-gen")

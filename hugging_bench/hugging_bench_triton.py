@@ -174,7 +174,7 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
         
                         
         LOG.info(f"Starting container {self.container.name}")
-        self._print_triton_bootup_logs(self.container, 10) 
+        self._print_triton_bootup_logs(self.container, 100) 
         
         return self
     
