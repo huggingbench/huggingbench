@@ -191,7 +191,7 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
         model_input: {'bind': "/model_input", 'mode': 'rw'}
     }
 
-    LOG.info(f"Running Docker container {image_name} gpu: {gpu} with command: {docker_args}")
+    LOG.info(f"Running Docker container {image_name} gpu: {gpu} with command: {docker_args} and volumes: {volumes}")
     container = client.containers.run(
         image_name,
         command=docker_args,
@@ -311,5 +311,5 @@ def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
             LOG.info(f"Writing header to CSV file {fieldnames}")
             writer.writeheader()  # Write header only once
 
-        LOG.info(f"Writing data to CSV file: {data}")
+        LOG.info(f"Writing data to CSV file '{csv_file}': {data}")
         writer.writerow(data)
