@@ -4,13 +4,15 @@ from typing import NamedTuple
 # from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
 import os
 
+TEMP_DIR = "./temp"
+TEMP_MODEL_REPO_DIR = f"{TEMP_DIR}/model_repository"
 
 @dataclass
 class TritonServerSpec:
     # TODO ports not used yet
     grpc_port: int = 8001
     http_port: int = 8000
-    model_repository_dir: str = "./model_repository"
+    model_repository_dir: str = TEMP_MODEL_REPO_DIR
 
 @dataclass
 class ExperimentSpec:

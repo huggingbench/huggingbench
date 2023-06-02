@@ -7,13 +7,13 @@
 
 from threading import Thread
 import threading
-from hugging_bench_config import ModelInfo
+from hugging_bench.hugging_bench_config import ModelInfo
 from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
 from types import MappingProxyType
-from hugging_bench_util import PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND, TRT_BACKEND, print_container_logs
+from hugging_bench.hugging_bench_util import PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND, TRT_BACKEND, print_container_logs
 import os, logging
 import multiprocessing
-from hugging_bench_config import TritonServerSpec
+from hugging_bench.hugging_bench_config import TritonServerSpec
 
 multiprocessing.set_start_method('spawn')
 

@@ -3,12 +3,9 @@ import os
 import subprocess
 import logging
 from threading import Thread
-from typing import Any
 
-import numpy as np
-
-from hugging_bench_config import Format, ModelInfo
-from hugging_bench_config import ExperimentSpec
+from hugging_bench.hugging_bench_config import Format, ModelInfo
+from hugging_bench.hugging_bench_config import ExperimentSpec
 # from model_config_constants import *
 
 ONNX_BACKEND = "onnxruntime_onnx"
@@ -211,7 +208,7 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
     return exit_code
 
 
-from hugging_bench_config import Input, Output
+from hugging_bench.hugging_bench_config import Input, Output
 import onnx
 from polygraphy.backend.onnx.util import get_input_metadata, get_output_metadata
 

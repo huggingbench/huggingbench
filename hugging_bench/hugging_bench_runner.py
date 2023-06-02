@@ -1,15 +1,12 @@
 import numpy as np
 from client.base import DatasetAlias, DatasetGen
-from hugging_bench_util import ModelExporter, append_to_csv
-from hugging_bench_config import ExperimentSpec, TritonServerSpec, Input
-from hugging_bench_triton import TritonConfig, TritonServer
+from hugging_bench.hugging_bench_util import ModelExporter, append_to_csv
+from hugging_bench.hugging_bench_config import ExperimentSpec, TritonServerSpec, Input, TEMP_DIR
+from hugging_bench.hugging_bench_triton import TritonConfig, TritonServer
 from client.triton_client import TritonClient
 from client.runner import RunnerConfig, Runner
 from client.datasets import get_dataset
 import os
-
-TEMP_DIR = "./temp"
-TEMP_MODEL_REPO_DIR = f"{TEMP_DIR}/model_repository"
 
 class ExperimentRunner:
     def __init__(self, hf_id: str, experiments: list[ExperimentSpec], server_spec: TritonServerSpec, dataset: DatasetAlias=None, task=None, model_local_path: str = None) -> None:
@@ -69,11 +66,11 @@ experiments=[
     ExperimentSpec(format="onnx", device="cpu", half=False),
 ]
 
-server_spec = TritonServerSpec(model_repository_dir=TEMP_MODEL_REPO_DIR)
+server_spec = TritonServerSpec()
 
 # cover all models with random data
 
-ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/projects/models/resnet-50").run()
+#ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/projects/models/resnet-50").run()
 # ExperimentRunner("bert-base-uncased", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/.cache/huggingface/hub/models--bert-base-uncased/snapshots/0a6aa9128b6194f4f3c4db429b6cb4891cdb421b", task="text-classification").run()
 
 # ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None).run()
