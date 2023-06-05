@@ -8,7 +8,6 @@ setup(
     version='1.0',
     packages=find_packages(),
     install_requires=[
-        'polygraphy==0.47.1', 
         'tritonclient[all]==2.33.0',
         'prometheus-client==0.16.0',
         'docker==6.1.2',
@@ -17,9 +16,6 @@ setup(
         'torchvision==0.15.2',
         'numpy==1.24.3',  
         'onnx==1.14.0'
-    ],
-    dependency_links=[
-        'https://pypi.ngc.nvidia.com'
     ],
     python_requires='>=3.9',
     tests_require=['pytest'],
