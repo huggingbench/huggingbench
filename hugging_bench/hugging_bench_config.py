@@ -19,6 +19,7 @@ class ExperimentSpec:
     format: str
     device: str
     half: bool
+    batch_size: int = 1
 
 @dataclass
 class Format:

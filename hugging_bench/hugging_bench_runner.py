@@ -5,8 +5,10 @@ from hugging_bench.hugging_bench_config import ExperimentSpec, TritonServerSpec,
 from hugging_bench.hugging_bench_triton import TritonConfig, TritonServer
 from client.triton_client import TritonClient
 from client.runner import RunnerConfig, Runner
-
+import logging
 import os
+
+LOG = logging.getLogger(__name__)
 
 class ExperimentRunner:
     def __init__(self, hf_id: str, experiments: list[ExperimentSpec], server_spec: TritonServerSpec, dataset: DatasetAlias=None, task=None, model_local_path: str = None) -> None:
@@ -28,16 +30,19 @@ class ExperimentRunner:
             triton_config = TritonConfig(self.server_spec, model_info).create_model_repo()
             triton_server = TritonServer(triton_config)
             triton_server.start()
-            triton_client = TritonClient("localhost:{}".format(server_spec.http_port), model_info.unique_name())
-            runner_config = RunnerConfig()
+            triton_client = TritonClient("localhost:{}".format(self.server_spec.http_port), model_info.unique_name())
+            runner_config = RunnerConfig(batch_size=spec.batch_size)
             client_runner = Runner(runner_config, triton_client, self._dataset_or_default(triton_client.inputs))
+            success = False
             try:
                 exec_times = client_runner.run()
+                success = True
             except Exception as e:
-                print(e)
+                LOG.error(f"Client load generation: {e}", exc_info=True)
             finally:
                 triton_server.stop()
-            self.process_results(spec, exec_times)
+            if success:
+                self.process_results(spec, exec_times)
 
     def process_results(self, spec: ExperimentSpec, exec_times: list[float]):
         # Calculate percentiles and append to csv

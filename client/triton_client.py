@@ -23,7 +23,7 @@ class TritonClient:
     metric_info = Info("client_info", "Information about the client")
     prom_started = False
 
-    def __init__(self, triton_url: str, model_name: str, max_paralell_requests: int = 1, prom_port: int = PROM_PORT):
+    def __init__(self, triton_url: str, model_name: str, max_paralell_requests: int = 10, prom_port: int = PROM_PORT):
         self._server_url = triton_url
         # we can't have "/" in the model file path
         self.model = model_name
