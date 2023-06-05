@@ -53,7 +53,7 @@ class ExperimentRunner:
             return self.dataset
         else:
             inputs = [Input(name=i['name'], dtype=i['datatype'], dims=[100 if s==-1 else s for s in i['shape']][1:]) for i in input_metadata.values()]
-            return DatasetGen(inputs).dataset
+            return DatasetGen(inputs, size=500).dataset
 
     
 
@@ -70,7 +70,7 @@ server_spec = TritonServerSpec()
 
 # cover all models with random data
 
-#ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/projects/models/resnet-50").run()
+ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/projects/models/resnet-50").run()
 # ExperimentRunner("bert-base-uncased", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/.cache/huggingface/hub/models--bert-base-uncased/snapshots/0a6aa9128b6194f4f3c4db429b6cb4891cdb421b", task="text-classification").run()
 
 # ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None).run()

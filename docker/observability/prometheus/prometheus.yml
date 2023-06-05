@@ -6,6 +6,11 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'triton+client'
+  - job_name: 'triton'
     static_configs:
-      - targets: ['host.docker.internal:8002', 'host.docker.internal:8001'] # triton  and locust client metric
+      - targets: ['host.docker.internal:8002'] # triton server metric
+
+  - job_name: 'huggingbench'
+    static_configs:
+      - targets: ['host.docker.internal:8011'] # huggingbench metric
+
