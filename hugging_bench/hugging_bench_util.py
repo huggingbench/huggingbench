@@ -74,8 +74,6 @@ class ModelExporter:
         if(self.task):
             cmd.append(f"--task={self.task}")
         
-
-        
         cmd.append(model_info.model_dir())
         
         run_docker_sdk("optimum", model_dir, cmd, model_info.gpu_enabled(), model_input=model_input)
@@ -94,11 +92,16 @@ class ModelExporter:
             output_shape=onnx_model_info.output_shape)
         model_dir = ov_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
-        
+        # input_name_str = ",".join([f"{input.name}{input.dims}" for input in ov_model_info.input_shape])
+
+        # input_shape_str = ','.join([f"{input.dims}" for input in ov_model_info.input_shape])
+        # input_name_str = input_name_str.replace("-1", "100")
+        input_name_str="input_ids[1,100],attention_mask[1,100],token_type_ids[1,100]"
         cmd = [
             "mo",
-            f"--input_model={onnx_model_info.model_file_path()[0]}",
-            f"--output_dir={model_dir}"
+            f"--input_model={onnx_model_info.model_file_path()}",
+            f"--output_dir={model_dir}",
+            f"--input={input_name_str}",
         ]
         run_docker_sdk(image_name="openvino", docker_args=cmd)
         return ov_model_info
@@ -143,36 +146,14 @@ def dtype_np_type(dtype: str):
     return triton_to_np_dtype(TritonConfig.DTYPE_MAP.get(dtype, None))
     
 
-def run_docker(image_name, workspace=None, docker_args=[]):
-    import shlex
-
-    # Construct Docker command
-    if(not workspace):
-        workspace = os.getcwd()
-    command = f'docker run --gpus=all -v {workspace}:{workspace} -w {workspace}  {image_name} {" ".join(docker_args)}'
-    try:
-        # Run command
-        LOG.info(command)
-
-        process = subprocess.Popen(shlex.split(command))
-        # Get output and errors
-        error = process.communicate()
-
-        if process.returncode != 0:
-            # If there are errors, raise an exception
-            raise Exception(f'Error executing Docker container: {error}')
-    except Exception as e:
-        raise e
-
 def print_container_logs(container, callback=None):
     """
     Prints logs of a Docker container until a specific message appears or a timeout is reached.
     """
-    for line in container.logs(stream=True):
+    for line in container.logs(stream=True, stdout=True, stderr=True):
         log_line = line.strip().decode('utf-8')
         LOG.info(log_line)
         callback(log_line) if callback else None
-
 
 
 
@@ -196,16 +177,16 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
         device_requests=[
                     docker.types.DeviceRequest(device_ids=["0"], capabilities=[['gpu']])] if gpu else [],
         working_dir=workspace,
-        detach=True,
+        detach=False,
         environment=env,
         auto_remove=True
         )
     
-    t = Thread(target = print_container_logs, args=[container])
-    t.start()
-    exit_code = container.wait()
-    LOG.info(f"Docker container exit code {exit_code}")
-    return exit_code
+    # t = Thread(target = print_container_logs, args=[container])
+    # t.start()
+    # exit_code = container.wait()
+    # LOG.info(f"Docker container exit code {exit_code}")
+    return 0
 
 
 from hugging_bench.hugging_bench_config import Input, Output

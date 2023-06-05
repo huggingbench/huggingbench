@@ -69,7 +69,7 @@ class ModelInfo:
         if(self.format.format_type == "onnx"):
             return os.path.join(self.model_dir(), "model.onnx")
         elif(self.format.format_type == "openvino"):
-            return os.path.join(self.model_dir(), "model.xml"), os.path.join(self.model_dir(), "model.bin")
+            return os.path.join(self.model_dir(), "model.xml") , os.path.join(self.model_dir(), "model.bin")
         elif(self.format.format_type == "trt"):
             return os.path.join(self.model_dir(), "model.plan")
         else: 

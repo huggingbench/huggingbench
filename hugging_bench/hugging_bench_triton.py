@@ -62,7 +62,13 @@ class TritonConfig:
         model_dir = os.path.join(conf_dir, "1")
         os.makedirs(model_dir, exist_ok=True)
 
-        shutil.copy(self.model_info.model_file_path(), model_dir)
+        if self.model_info.format.format_type == 'openvino':
+            model_bin, model_xml = self.model_info.model_file_path()
+            shutil.copy(model_bin, model_dir)
+            shutil.copy(model_xml, model_dir)
+            conf_pbtxt=conf_pbtxt.replace("-1", "100")
+        else:
+            shutil.copy(self.model_info.model_file_path(), model_dir)
         
         config_path = os.path.join(conf_dir, "config.pbtxt")
         try:
@@ -93,6 +99,18 @@ class TritonConfig:
                 output=self._model_output(),
                 backend = self.BACKEND_MAP.get(self.model_info.format.format_type)
             )
+
+            from tritonclient.grpc.model_config_pb2 import ModelParameter
+            
+            p1 = model_config.parameters['RESHAPE_IO_LAYERS']
+            p1.string_value = 'YES'
+            
+            p2 = model_config.parameters['ENABLE_BATCH_PADDING']
+            p2.string_value = 'YES'
+            
+            p3 = model_config.parameters['SKIP_OV_DYNAMIC_BATCHSIZE']
+            p3.string_value = 'YES'
+
         elif(self.model_info.format.format_type == "trt"):
             model_config= ModelConfig(
                 name=self.model_info.unique_name(),
@@ -153,7 +171,7 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
 
         self.container = self.client.containers.run(
             tritonserver_docker,
-            command=["tritonserver", "--model-repository=/models", "--model-control-mode=explicit", f"--load-model={self.model_name}"],
+            command=["tritonserver", "--model-repository=/models", "--model-control-mode=explicit", f"--load-model={self.model_name}", "--disable-auto-complete-config"],
             volumes=volumes,
             cpu_count= 0 if (self.gpu) else self.no_processor,
             device_requests=[
