@@ -9,7 +9,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'nvidia-pyindex', # requirement for polygraphy
-        'polygraphy', 
+        'polygraphy==0.47.1', 
         'tritonclient[all]==2.33.0',
         'prometheus-client==0.16.0',
         'docker==6.1.2',
