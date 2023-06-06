@@ -9,7 +9,7 @@ services:
     image: prom/prometheus
     restart: always
     extra_hosts:
-      - "docker.host:${DOCKER_HOST_IP:-host.docker.internal}"
+      - "docker.host:${DOCKER_HOST_IP:-}"
     volumes:
       - ./prometheus:/etc/prometheus/
       - prometheus_data:/prometheus
