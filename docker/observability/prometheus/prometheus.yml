@@ -8,9 +8,9 @@ scrape_configs:
 
   - job_name: 'triton'
     static_configs:
-      - targets: ['host.docker.internal:8002'] # triton server metric
+      - targets: ["docker.host:8002"] # triton server metric
 
   - job_name: 'huggingbench'
     static_configs:
-      - targets: ['host.docker.internal:8011'] # huggingbench metric
+      - targets: ["docker.host:8011"] # huggingbench metric
 
