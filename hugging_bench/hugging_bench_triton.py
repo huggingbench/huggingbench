@@ -10,7 +10,7 @@ import threading
 from hugging_bench.hugging_bench_config import ModelInfo
 from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
 from types import MappingProxyType
-from hugging_bench.hugging_bench_util import PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND, TRT_BACKEND, print_container_logs
+from hugging_bench.hugging_bench_util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND, TRT_BACKEND, print_container_logs
 import os, logging
 import multiprocessing
 from hugging_bench.hugging_bench_config import TritonServerSpec
@@ -139,6 +139,9 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
 
     def start(self, tritonserver_docker='nvcr.io/nvidia/tritonserver:23.04-py3'):
         LOG.info(PRINT_HEADER % " STARTING TRITON SERVER ")
+        env_docker = os.getenv(ENV_TRITON_SERVER_DOCKER)
+        if env_docker is not None:
+            tritonserver_docker = env_docker
         self.client = docker.from_env()
 
         volumes = {

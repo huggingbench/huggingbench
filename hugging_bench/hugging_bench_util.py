@@ -13,6 +13,7 @@ TORCH_BACKEND = "pytorch_libtorch"
 OPENVINO_BACKEND = "openvino"
 TRT_BACKEND = "tensorrt_plan"
 PRINT_HEADER = "\n\n============================%s=====================================\n"
+ENV_TRITON_SERVER_DOCKER = "triton_server_docker_image"
 
 LOG = logging.getLogger(__name__)
 class ModelExporter:
