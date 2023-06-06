@@ -30,7 +30,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install colored polygraphy==0.47.1 --extra-index-url https://pypi.ngc.nvidia.com
         python -m pip install .
-        docker pull nvcr.io/nvidia/tritonserver:23.04-py3
+    - name: Pull custom build Triton server image
+      run: docker pull ghcr.io/niksajakovljevic/tritonserver:23.04-onnx
     - name: Test with pytest
       run: |
         python -m pip install pytest
