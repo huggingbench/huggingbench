@@ -66,7 +66,6 @@ class TritonConfig:
             model_bin, model_xml = self.model_info.model_file_path()
             shutil.copy(model_bin, model_dir)
             shutil.copy(model_xml, model_dir)
-            conf_pbtxt=conf_pbtxt.replace("-1", "100")
         else:
             shutil.copy(self.model_info.model_file_path(), model_dir)
         

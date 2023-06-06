@@ -20,6 +20,7 @@ class ExperimentSpec:
     device: str
     half: bool
     batch_size: int = 1
+    sequence_length: int = 128
 
 @dataclass
 class Format:

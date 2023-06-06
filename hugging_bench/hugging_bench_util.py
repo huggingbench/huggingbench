@@ -28,10 +28,9 @@ class ModelExporter:
         #  onnx format is a starting point    
         model_info = self._export_hf2onnx("0.001", self.spec.device, self.spec.half, model_input_path)
         model_info = model_info.with_shapes(
-                    input_shape=hf_model_input(model_info.model_file_path(), half=model_info.half()), 
+                    input_shape=hf_model_input(model_info.model_file_path() ,half=model_info.half()), 
                     output_shape=hf_model_output(model_info.model_file_path(), half=model_info.half()))  
-        
-        
+             
         if(self.spec.format == "onnx"):   
             None
         elif(self.spec.format == "openvino"):
@@ -61,6 +60,8 @@ class ModelExporter:
             "optimum-cli", "export", "onnx",
             model_arg, 
             "--framework=pt",
+            # f"--batch_size={self.spec.batch_size}",
+            # f"--sequence_length={self.spec.sequence_length}",
             "--monolit", 
             f"--atol={atol}"]
         
@@ -90,18 +91,20 @@ class ModelExporter:
             base_dir=self.base_dir, 
             input_shape=onnx_model_info.input_shape,
             output_shape=onnx_model_info.output_shape)
+
+        # this is kind of hack as current version of openvino in triton server does not suppot dynamic shape and shape can not take -1.
+        ov_model_info = ov_model_info.with_shapes(
+            input_shape=hf_model_input(onnx_model_info.model_file_path(), sequence_length=self.spec.sequence_length ,half=onnx_model_info.half()), 
+            output_shape=hf_model_output(onnx_model_info.model_file_path(), sequence_length=self.spec.sequence_length, half=onnx_model_info.half()))  
+        
         model_dir = ov_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
-        # input_name_str = ",".join([f"{input.name}{input.dims}" for input in ov_model_info.input_shape])
-
-        # input_shape_str = ','.join([f"{input.dims}" for input in ov_model_info.input_shape])
-        # input_name_str = input_name_str.replace("-1", "100")
-        input_name_str="input_ids[1,100],attention_mask[1,100],token_type_ids[1,100]"
+        input_str = ",".join([f"{input.name}{[self.spec.sequence_length] + input.dims}" for input in ov_model_info.input_shape])
         cmd = [
             "mo",
             f"--input_model={onnx_model_info.model_file_path()}",
             f"--output_dir={model_dir}",
-            f"--input={input_name_str}",
+            f"--input={input_str}",
         ]
         run_docker_sdk(image_name="openvino", docker_args=cmd)
         return ov_model_info
@@ -128,8 +131,8 @@ class ModelExporter:
             "--model-type=onnx",
             "--convert-to=trt",
             f"--input-shapes={input_str}",
-            f"--output={trt_model_info.model_file_path()[0]}",
-            onnx_model_info.model_file_path()[0]
+            f"--output={trt_model_info.model_file_path()}",
+            onnx_model_info.model_file_path()
         ]
         run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=cmd, gpu=True)
         return trt_model_info
@@ -205,9 +208,11 @@ SHAPE_MAP = {
     "feature_size": 80,
 }
 
-def get_dim_value(dim):
+def get_dim_value(dim, sequence_length):
     if isinstance(dim, int) or dim.isnumeric():
         return int(dim)
+    if dim == 'sequence_length':
+        return sequence_length
     value = SHAPE_MAP.get(dim, -1)
     if value is None:
         raise ValueError(f"Dimension {dim} not found in SHAPE_MAP")
@@ -218,12 +223,12 @@ def half_fp32(input):
     new_input = replace(input, dtype = "FP16" if input.dtype=="FP32" else input.dtype)
     return new_input
 
-def hf_model_input(onnx_model_path: str, half=False):
+def hf_model_input(onnx_model_path: str, sequence_length: int=-1, half=False):
     onnx_model = onnx.load(onnx_model_path)
     input_metadata_dict = get_input_metadata(onnx_model.graph)
     inputs = []
     for input_name, input_metadata in input_metadata_dict.items():
-        dims = [get_dim_value(dim) for dim in input_metadata.shape if dim != "batch_size"]
+        dims = [get_dim_value(dim, sequence_length) for dim in input_metadata.shape if dim != "batch_size"]
         dtype = str(input_metadata.dtype).upper()
         dtype=format_dtype(dtype)
         inputs.append(Input(name=input_name, dtype=dtype, dims=dims))
@@ -231,12 +236,12 @@ def hf_model_input(onnx_model_path: str, half=False):
     return list(map(half_fp32, inputs)) if half else inputs
 
 
-def hf_model_output(onnx_model_path: str, half=False):
+def hf_model_output(onnx_model_path: str, sequence_length: int=-1, half=False):
     onnx_model = onnx.load(onnx_model_path)
     output_metadata_dict = get_output_metadata(onnx_model.graph)
     outputs = []
     for output_name, output_metadata in output_metadata_dict.items():
-        dims = [get_dim_value(dim) for dim in list(output_metadata.shape) if dim != "batch_size"]
+        dims = [get_dim_value(dim, sequence_length) for dim in list(output_metadata.shape) if dim != "batch_size"]
         dtype = str(output_metadata.dtype).upper()
         dtype=format_dtype(dtype)
         outputs.append(Output(name=output_name, dtype=dtype, dims=dims))

@@ -32,7 +32,7 @@ class ExperimentRunner:
             triton_server.start()
             triton_client = TritonClient("localhost:{}".format(self.server_spec.http_port), model_info.unique_name())
             runner_config = RunnerConfig(batch_size=spec.batch_size)
-            client_runner = Runner(runner_config, triton_client, self._dataset_or_default(triton_client.inputs))
+            client_runner = Runner(runner_config, triton_client, self._dataset_or_default(triton_client.inputs, spec.sequence_length))
             success = False
             try:
                 exec_times = client_runner.run()
@@ -53,11 +53,11 @@ class ExperimentRunner:
         res_dict = {'median': median, '90_percentile': percentile_90, '99_percentile': percentile_99}
         append_to_csv(vars(spec), res_dict, self.output)
 
-    def _dataset_or_default(self, input_metadata):
+    def _dataset_or_default(self, input_metadata, sequence_length):
         if(self.dataset): 
             return self.dataset
         else:
-            inputs = [Input(name=i['name'], dtype=i['datatype'], dims=[100 if s==-1 else s for s in i['shape']][1:]) for i in input_metadata.values()]
+            inputs = [Input(name=i['name'], dtype=i['datatype'], dims=[sequence_length if s==-1 else s for s in i['shape']][1:]) for i in input_metadata.values()]
             return DatasetGen(inputs, size=500).dataset
 
     
