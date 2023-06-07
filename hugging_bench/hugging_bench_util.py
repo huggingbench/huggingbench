@@ -72,7 +72,8 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
     }
 
     LOG.info(
-        f"Running Docker container {image_name} gpu: {gpu} with command: {docker_args} and volumes: {volumes}")
+        f"Running docker image: {image_name} gpu: {gpu} volumes: {volumes} env: {env}: \ncommand: {' '.join(docker_args)}\n")
+    
     container = client.containers.run(
         image_name,
         command=docker_args,
@@ -88,6 +89,7 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
     t = Thread(target=print_container_logs, args=[container])
     t.start()
     exit_code = container.wait()
+    t.join()
     LOG.info(f"Docker container exit code {exit_code}")
     return exit_code
 
@@ -115,8 +117,7 @@ def get_dim_value(dim):
 
 
 def half_fp32(input):
-    new_input = replace(input, dtype="FP16" if input.dtype ==
-                        "FP32" else input.dtype)
+    new_input = replace(input, dtype="FP16" if input.dtype =="FP32" else input.dtype)
     return new_input
 
 

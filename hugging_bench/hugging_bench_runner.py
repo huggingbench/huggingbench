@@ -1,7 +1,7 @@
 import numpy as np
 from client.base import DatasetAlias, DatasetGen
 from hugging_bench.hugging_bench_util import append_to_csv
-from hugging_bench.hugging_bench_model_exporter import ModelExporter
+from hugging_bench.hugging_bench_exporter import ModelExporter
 from hugging_bench.hugging_bench_config import ExperimentSpec, TritonServerSpec, Input, TEMP_DIR
 from hugging_bench.hugging_bench_triton import TritonConfig, TritonServer
 from client.triton_client import TritonClient
