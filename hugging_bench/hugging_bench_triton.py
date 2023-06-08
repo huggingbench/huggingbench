@@ -10,7 +10,7 @@ import threading
 from hugging_bench.hugging_bench_config import ModelInfo
 from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
 from types import MappingProxyType
-from hugging_bench.hugging_bench_util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, ONNX_BACKEND, OPENVINO_BACKEND, TRT_BACKEND, print_container_logs
+from hugging_bench.hugging_bench_util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, print_container_logs
 import os, logging
 import multiprocessing
 from hugging_bench.hugging_bench_config import TritonServerSpec
@@ -20,7 +20,7 @@ multiprocessing.set_start_method('spawn')
 LOG = logging.getLogger(__name__)
 
 class TritonConfig:
-    
+
     # numpy types
     DTYPE_MAP = MappingProxyType({
             "INT64": DataType.TYPE_INT64,
@@ -30,9 +30,9 @@ class TritonConfig:
         })
     
     BACKEND_MAP = MappingProxyType({
-            "onnx": ONNX_BACKEND,
-            "openvino": OPENVINO_BACKEND,
-            "trt": TRT_BACKEND,
+            "onnx": "onnxruntime_onnx",
+            "openvino": "openvino",
+            "trt": "tensorrt_plan",
             # add more backend mappings if needed
         })
     
@@ -62,7 +62,12 @@ class TritonConfig:
         model_dir = os.path.join(conf_dir, "1")
         os.makedirs(model_dir, exist_ok=True)
 
-        shutil.copy(self.model_info.model_file_path(), model_dir)
+        if self.model_info.format.format_type == 'openvino':
+            model_bin, model_xml = self.model_info.model_file_path()
+            shutil.copy(model_bin, model_dir)
+            shutil.copy(model_xml, model_dir)
+        else:
+            shutil.copy(self.model_info.model_file_path(), model_dir)
         
         config_path = os.path.join(conf_dir, "config.pbtxt")
         try:
@@ -93,6 +98,18 @@ class TritonConfig:
                 output=self._model_output(),
                 backend = self.BACKEND_MAP.get(self.model_info.format.format_type)
             )
+
+            from tritonclient.grpc.model_config_pb2 import ModelParameter
+            
+            p1 = model_config.parameters['RESHAPE_IO_LAYERS']
+            p1.string_value = 'YES'
+            
+            p2 = model_config.parameters['ENABLE_BATCH_PADDING']
+            p2.string_value = 'YES'
+            
+            p3 = model_config.parameters['SKIP_OV_DYNAMIC_BATCHSIZE']
+            p3.string_value = 'YES'
+
         elif(self.model_info.format.format_type == "trt"):
             model_config= ModelConfig(
                 name=self.model_info.unique_name(),
