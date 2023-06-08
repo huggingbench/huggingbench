@@ -1,20 +1,17 @@
 import csv
-from dataclasses import replace
-from typing import NamedTuple, Dict
-from polygraphy.backend.onnx.util import get_input_metadata, get_output_metadata
-import onnx
-from hugging_bench.hugging_bench_config import Input, Output
-import os
+import logging
 import os
 import subprocess
-import logging
+from dataclasses import replace
 from threading import Thread
+from typing import Dict, NamedTuple
 
+import onnx
+from polygraphy.backend.onnx.util import (get_input_metadata,
+                                          get_output_metadata)
 
-ONNX_BACKEND = "onnxruntime_onnx"
-TORCH_BACKEND = "pytorch_libtorch"
-OPENVINO_BACKEND = "openvino"
-TRT_BACKEND = "tensorrt_plan"
+from hugging_bench.hugging_bench_config import Input, Output
+
 PRINT_HEADER = "\n\n============================%s=====================================\n"
 ENV_TRITON_SERVER_DOCKER = "triton_server_docker_image"
 
@@ -22,38 +19,16 @@ LOG = logging.getLogger(__name__)
 
 
 def dtype_np_type(dtype: str):
-    from tritonclient.utils import triton_to_np_dtype
     from hugging_bench_triton import TritonConfig
+    from tritonclient.utils import triton_to_np_dtype
     return triton_to_np_dtype(TritonConfig.DTYPE_MAP.get(dtype, None))
-
-
-def run_docker(image_name, workspace=None, docker_args=[]):
-    import shlex
-
-    # Construct Docker command
-    if (not workspace):
-        workspace = os.getcwd()
-    command = f'docker run --gpus=all -v {workspace}:{workspace} -w {workspace}  {image_name} {" ".join(docker_args)}'
-    try:
-        # Run command
-        LOG.info(command)
-
-        process = subprocess.Popen(shlex.split(command))
-        # Get output and errors
-        error = process.communicate()
-
-        if process.returncode != 0:
-            # If there are errors, raise an exception
-            raise Exception(f'Error executing Docker container: {error}')
-    except Exception as e:
-        raise e
 
 
 def print_container_logs(container, callback=None):
     """
     Prints logs of a Docker container until a specific message appears or a timeout is reached.
     """
-    for line in container.logs(stream=True):
+    for line in container.logs(stream=True, stdout=True, stderr=True):
         log_line = line.strip().decode('utf-8')
         LOG.info(log_line)
         callback(log_line) if callback else None
@@ -73,7 +48,7 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
 
     LOG.info(
         f"Running docker image: {image_name} gpu: {gpu} volumes: {volumes} env: {env}: \ncommand: {' '.join(docker_args)}\n")
-    
+
     container = client.containers.run(
         image_name,
         command=docker_args,
@@ -107,26 +82,28 @@ SHAPE_MAP = {
 }
 
 
-def get_dim_value(dim):
+def get_dim_value(dim, custom_shape_map):
     if isinstance(dim, int) or dim.isnumeric():
         return int(dim)
-    value = SHAPE_MAP.get(dim, -1)
+    shapes = {**SHAPE_MAP, **custom_shape_map}
+    value = shapes.get(dim, -1)
     if value is None:
         raise ValueError(f"Dimension {dim} not found in SHAPE_MAP")
     return value
 
 
 def half_fp32(input):
-    new_input = replace(input, dtype="FP16" if input.dtype =="FP32" else input.dtype)
+    new_input = replace(input, dtype="FP16" if input.dtype ==
+                        "FP32" else input.dtype)
     return new_input
 
 
-def hf_model_input(onnx_model_path: str, half=False):
+def hf_model_input(onnx_model_path: str, half=False, custom_shape_map={}):
     onnx_model = onnx.load(onnx_model_path)
     input_metadata_dict = get_input_metadata(onnx_model.graph)
     inputs = []
     for input_name, input_metadata in input_metadata_dict.items():
-        dims = [get_dim_value(dim)
+        dims = [get_dim_value(dim, custom_shape_map)
                 for dim in input_metadata.shape if dim != "batch_size"]
         dtype = str(input_metadata.dtype).upper()
         dtype = format_dtype(dtype)
@@ -135,12 +112,12 @@ def hf_model_input(onnx_model_path: str, half=False):
     return list(map(half_fp32, inputs)) if half else inputs
 
 
-def hf_model_output(onnx_model_path: str, half=False):
+def hf_model_output(onnx_model_path: str, half=False, custom_shape_map={}):
     onnx_model = onnx.load(onnx_model_path)
     output_metadata_dict = get_output_metadata(onnx_model.graph)
     outputs = []
     for output_name, output_metadata in output_metadata_dict.items():
-        dims = [get_dim_value(dim) for dim in list(
+        dims = [get_dim_value(dim, custom_shape_map) for dim in list(
             output_metadata.shape) if dim != "batch_size"]
         dtype = str(output_metadata.dtype).upper()
         dtype = format_dtype(dtype)
