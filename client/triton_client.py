@@ -1,8 +1,10 @@
 import logging
 import json
+from types import FunctionType
 from typing import List
 from prometheus_client import REGISTRY, start_http_server, Counter, Histogram, Info, write_to_textfile
 import tritonclient.http as httpclient
+from tritonclient.http import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype
 import numpy as np
 
@@ -15,11 +17,13 @@ PROM_PORT = 8011  # Prometheus port
 
 
 class TritonClient:
-    """ Runs the given function in locust and records metrics """
+    """ Interacts with Triton server using HTTP """
     metric_infer_latency = Histogram(
-        "infer_latency", "Latency for inference in seconds", labelnames=["model", "batch_size"])
-    metric_infer_requests = Counter(
-        "infer_requests", "Number of inference requests", labelnames=["model", "batch_size"])
+        "client_infer_latency", "Latency for inference in seconds", labelnames=["model", "batch_size"])
+    metric_infer_requests_success = Counter(
+        "client_infer_requests_success", "Number of successful inference requests", labelnames=["model", "batch_size"])
+    metric_infer_failed_requests =  Counter(
+        "client_infer_requests_failed", "Number of failed inference requests", labelnames=["model", "batch_size"])
     metric_info = Info("client_info", "Information about the client")
     prom_started = False
 
@@ -61,7 +65,6 @@ class TritonClient:
 
     def _infer_batch(self, samples, async_req : bool = False):
         """ Runs inference on the triton server """
-        self.metric_infer_requests.labels(self.model, len(samples)).inc()
         infer_inputs = []
         infer_outputs = []
         batched_data_per_input = {}
@@ -88,17 +91,26 @@ class TritonClient:
         infer_outputs = self._prepare_infer_outputs()
         with self.metric_infer_latency.labels(self.model, len(samples)).time():
             if async_req:
-                return self.client.async_infer(
-                model_name=self.model, model_version=self.model_version,
-                inputs=infer_inputs, outputs=infer_outputs)
+               return self._infer_with_metrics(fn=self.client.async_infer,batch_size= len(samples), 
+                                        **{'model_name': self.model, 'model_version': self.model_version,
+                                         'inputs': infer_inputs, 'outputs': infer_outputs})
             else:
-                return self.client.infer(
-                    model_name=self.model, model_version=self.model_version,
-                inputs=infer_inputs, outputs=infer_outputs)
+                return self._infer_with_metrics(fn=self.client.infer, batch_size= len(samples),
+                                   **{'model_name': self.model, 'model_version': self.model_version,
+                                    'inputs': infer_inputs, 'outputs': infer_outputs})
     
+    def _infer_with_metrics(self, fn, batch_size: int, **kwargs) :
+        try:
+            req = fn(**kwargs)
+            self.metric_infer_requests_success.labels(self.model, batch_size).inc()
+            return req
+        except InferenceServerException as e:
+            LOG.error("failed inference: %s, details: %s", e.message(), e.debug_details())
+            self.metric_infer_failed_requests.labels(self.model, batch_size).inc()
+            return None
+
     def infer_batch_async(self, samples) -> httpclient.InferAsyncRequest:
         return self._infer_batch(samples, async_req=True)
-
 
     def _prepare_infer_inputs(self, sample) -> List[httpclient.InferInput]:
         """ Prepares the input for inference """

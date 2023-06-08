@@ -22,7 +22,7 @@ class ModelExporter:
     def export(self, model_input_path: str = None) -> ModelInfo:
         #  onnx format is a starting point
         onnx_model_info = self._export_hf2onnx(
-            "0.001", self.spec.device, self.spec.half, model_input_path, self.spec.batch_size)
+            "0.001", self.spec.device, self.spec.half, model_input_path, self.spec.batch_size, self.spec.client_workers)
         inputs = hf_model_input(
             onnx_model_info.model_file_path(), half=onnx_model_info.half())
         outputs = hf_model_output(
@@ -39,11 +39,11 @@ class ModelExporter:
         else:
             raise Exception(f"Unknown format {self.spec.format}")
 
-    def _export_hf2onnx(self, atol=0.001, device=None, half=False, model_input: str = None, batch_size: int = 1) -> ModelInfo:
+    def _export_hf2onnx(self, atol=0.001, device=None, half=False, model_input: str = None, batch_size: int = 1, client_workers: int = 1) -> ModelInfo:
         LOG.info(PRINT_HEADER % " ONNX EXPORT ")
 
         onnx_model_info = ModelInfo(self.hf_id, self.task, Format(
-            "onnx", {"atol": atol, "device": device, "half": half, "batch_size": batch_size}), base_dir=self.base_dir)
+            "onnx", {"atol": atol, "device": device, "half": half, "batch_size": batch_size, "client_workers": client_workers}), base_dir=self.base_dir)
 
         if (all(os.path.exists(file) for file in onnx_model_info.model_file_path())):
             LOG.info(

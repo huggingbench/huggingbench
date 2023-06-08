@@ -22,6 +22,8 @@ class ExperimentSpec:
     half: bool
     batch_size: int = 1
     sequence_length: int = 100
+    client_workers: int = 1
+
 
 
 @dataclass
@@ -119,4 +121,6 @@ class ModelInfo:
             "gpu": str(self.gpu_enabled()),
             "half": str(self.half()),
             "batch_size": str(self.format.parameters.get("batch_size", 1)),
+            "sequence_length": str(self.format.parameters.get("sequence_length", 100)),
+            "client_workers": str(self.format.parameters.get("client_workers", 1)),
         }
