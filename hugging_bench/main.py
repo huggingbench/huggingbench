@@ -1,3 +1,5 @@
+from gevent import monkey
+monkey.patch_all()
 from hugging_bench.hugging_bench_config import ExperimentSpec, TritonServerSpec
 from hugging_bench.hugging_bench_runner import ExperimentRunner
 from client.datasets import get_dataset
@@ -9,12 +11,13 @@ def main():
         # ExperimentSpec(format="onnx", device="cuda", half=True),   
         # ExperimentSpec(format="onnx", device="cuda", half=False),
         ExperimentSpec(format="onnx", device="cpu", half=False),
+        ExperimentSpec(format="onnx", device="cpu", half=False, batch_size=4),
         # ExperimentSpec(format="onnx", device="cpu", half=True)
     ]
     server_spec = TritonServerSpec()
 
-    ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/projects/models/resnet-50").run()
-    # ExperimentRunner("bert-base-uncased", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/.cache/huggingface/hub/models--bert-base-uncased/snapshots/0a6aa9128b6194f4f3c4db429b6cb4891cdb421b", task="text-classification").run()
+    # ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/projects/models/resnet-50").run()
+    ExperimentRunner("bert-base-uncased", experiments, server_spec, dataset=None, model_local_path="/Users/niksa/projects/models/bert-base-uncased", task="text-classification").run()
 
     # ExperimentRunner("microsoft/resnet-50", experiments, server_spec, dataset=None).run()
     # ExperimentRunner("bert-base-uncased", experiments, server_spec, dataset=None).run()

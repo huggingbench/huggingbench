@@ -28,7 +28,7 @@ class ExperimentRunner:
         for spec in self.experiments:
             exporter = ModelExporter(self.hf_id, spec, self.task, TEMP_DIR)
             model_info = exporter.export(self.model_local_path)
-            triton_config = TritonConfig(self.server_spec, model_info).create_model_repo()
+            triton_config = TritonConfig(self.server_spec, model_info).create_model_repo(spec.batch_size)
             triton_server = TritonServer(triton_config)
             triton_server.start()
             triton_client = TritonClient("localhost:{}".format(self.server_spec.http_port), model_info.unique_name())

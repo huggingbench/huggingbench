@@ -15,7 +15,7 @@ import os, logging
 import multiprocessing
 from hugging_bench.hugging_bench_config import TritonServerSpec
 
-multiprocessing.set_start_method('spawn')
+# multiprocessing.set_start_method('spawn')
 
 LOG = logging.getLogger(__name__)
 
