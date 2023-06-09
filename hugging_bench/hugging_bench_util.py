@@ -42,9 +42,11 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
         workspace = os.getcwd()
 
     volumes = {
-        workspace: {'bind': workspace, 'mode': 'rw'},
-        model_input: {'bind': "/model_input", 'mode': 'rw'}
+        workspace: {'bind': workspace, 'mode': 'rw'}
     }
+
+    if not model_input:
+        volumes[model_input] = {'bind': "/model_input", 'mode': 'rw'}
 
     LOG.info(
         f"Running docker image: {image_name} gpu: {gpu} volumes: {volumes} env: {env}: \ncommand: {' '.join(docker_args)}\n")

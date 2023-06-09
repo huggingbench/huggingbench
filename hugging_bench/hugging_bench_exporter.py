@@ -45,7 +45,7 @@ class ModelExporter:
         onnx_model_info = ModelInfo(self.hf_id, self.task, Format(
             "onnx", {"atol": atol, "device": device, "half": half, "batch_size": batch_size}), base_dir=self.base_dir)
 
-        if (all(os.path.exists(file) for file in onnx_model_info.model_file_path())):
+        if (os.path.exists(onnx_model_info.model_file_path())):
             LOG.info(
                 f"Model already exists at {onnx_model_info.model_file_path()}")
             return onnx_model_info
@@ -126,17 +126,20 @@ class ModelExporter:
         model_dir = trt_onnx_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
 
-        input_str = ' '.join(
-            [f"{input.name}:{input.dims}" for input in trt_onnx_model_info.input_shape])
+        def comma(arr):
+            shape = [self.spec.batch_size] + arr
+            shape = [self.spec.sequence_length if x==-1 else x for x in shape]
+            list_string = '[' + ','.join(str(x) for x in shape) + ']'
+            return list_string
+
+        # input_str = ' '.join(
+        #     [f"--trt-max-shapes={input.name}:{comma(input.dims)}" for input in trt_onnx_model_info.input_shape])
 
         cmd = [
-            "polygraphy",
-            "convert",
-            "--model-type=onnx",
-            "--convert-to=trt",
-            f"--input-shapes={input_str}",
-            f"--output={trt_onnx_model_info.model_file_path()[0]}",
-            onnx_onnx_model_info.model_file_path()[0]
+            "trtexec",
+            "--explicitBatch",
+            f"--onnx={onnx_onnx_model_info.model_file_path()}",
+            f"--saveEngine={trt_onnx_model_info.model_file_path()}",
         ]
         run_docker_sdk(
             image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=cmd, gpu=True)
@@ -145,5 +148,5 @@ class ModelExporter:
     def _inspect_onnx(self, onnx_model_info: ModelInfo):
         LOG.info(PRINT_HEADER % " ONNX MODEL INSPECTION ")
 
-        run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=[
+        run_docker_sdk(image_name="polygraphy", docker_args=[
                        "polygraphy", "inspect", "model", f"{onnx_model_info.model_file_path()[0]}", "--mode=onnx"], env={"POLYGRAPHY_AUTOINSTALL_DEPS": 1})
