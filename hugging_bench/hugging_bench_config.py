@@ -23,6 +23,7 @@ class ExperimentSpec:
     batch_size: int = 1
     sequence_length: int = 100
     client_workers: int = 1
+    async_clients: bool = False
 
 
 
