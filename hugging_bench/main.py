@@ -10,8 +10,9 @@ def main():
         # ExperimentSpec(format="trt", device="cuda", half=False),
         # ExperimentSpec(format="onnx", device="cuda", half=True),   
         # ExperimentSpec(format="onnx", device="cuda", half=False),
-        ExperimentSpec(format="onnx", device="cpu", half=False),
-        ExperimentSpec(format="onnx", device="cpu", half=False, batch_size=4),
+        # ExperimentSpec(format="onnx", device="cpu", half=False),
+        # ExperimentSpec(format="onnx", device="cpu", half=False, batch_size=4),
+        ExperimentSpec(format="onnx", device="cpu", half=False, client_workers=4),
         # ExperimentSpec(format="onnx", device="cpu", half=True)
     ]
     server_spec = TritonServerSpec()

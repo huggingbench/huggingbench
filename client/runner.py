@@ -1,7 +1,7 @@
 import logging
 import queue
 from threading import Thread, Event, Lock
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, CancelledError, TimeoutError, as_completed
 from client.base import DatasetAlias, DatasetIterator
 from client.triton_client import TritonClient
 from timeit import default_timer as timer
@@ -32,6 +32,10 @@ class Runner:
         fail_counter = ThreadSafeCounter()
         success_counter = ThreadSafeCounter()
         def send_batch(batch):
+            if len(batch) == 0:
+                LOG.warn("Attempted sending batch with no data")
+                return
+            
             LOG.debug("Sending batch of size %d", len(batch))
             start = timer()
             success = False
@@ -39,20 +43,19 @@ class Runner:
                 req = self.client.infer_batch_async(batch)
                 if req is not None:
                     async_reqs.put(req)
-                    LOG.debug("Sent async request")
+                    LOG.debug("Sent async batch request")
                     success = True
                 else:
-                    LOG.warn("Failed async request")
+                    LOG.warn("Failed async batch request")
             else:
                 res = self.client.infer_batch(batch)
                 if res is not None:
-                    LOG.debug("Received response")
+                    LOG.debug("Received batch response")
                     success = True
                 else:
-                    LOG.warn("Failed request")
+                    LOG.info("Failed batch request")
             end = timer()
-            self.execution_times.append(end - start)
-            batch.clear()
+            self.execution_times.append(end - start) # this is only true for sync requests
             return success
         
         if self.config.async_req:
@@ -69,34 +72,46 @@ class Runner:
                     
             Thread(target=get_async_result, args=(async_reqs, completed)).start() # process async responses
 
-        def future_status(f: Future):
-            success = f.result()
-            success_counter.increment(1) if success else fail_counter.increment(1)
+        item_cnt = 0
+        batch_group_cnt = 0
+        total = len(self.dataset)
+        status_update_lock = Lock()
+        def future_result(f: Future):
+            nonlocal item_cnt, batch_group_cnt, total
+            try:
+                success = f.result()
+                LOG.debug("Future completed with result: %s", success)
+                success_counter.increment(1) if success else fail_counter.increment(1)
+            except (CancelledError, TimeoutError, Exception) as e:
+                LOG.error("future error: %s",e)
+                fail_counter.increment(1)
+            finally:
+                with status_update_lock:
+                    item_cnt+=1
+                    progress = item_cnt/total
+                    if progress > 0.1:
+                        LOG.info(f"Processed {int(progress*batch_group_cnt*100)}%...", )
+                        item_cnt=0
+                        batch_group_cnt+=1
             
         batch = []
-        total = len(self.dataset)
+        futures = []
         LOG.info("Processed 0 of %d items", total)
-        item_cnt = 0
-        shard = 1
         for sample in self.dataset:
-            item_cnt+=1
-            progress = item_cnt/total
-            if progress > 0.1:
-                LOG.info(f"Processed {int(progress*shard*100)}%...", )
-                item_cnt = 0
-                shard+=1
-
             batch.append(sample)
             if len(batch) == self.config.batch_size:
                 f = executor.submit(send_batch, batch)
-                f.add_done_callback(future_status)
+                futures.append(f)
+                batch = []
 
         if len(batch) > 0:
             f = executor.submit(send_batch, batch)
-            f.add_done_callback(future_status)
+            futures.append(f)
+
+        for f in as_completed(futures):
+            future_result(f)
         LOG.info("Processed all items")
         LOG.info("Finished client runner")
-        executor.shutdown(wait=True, cancel_futures=False)
         if fail_counter.value() > 0:
             LOG.warn("Failed %d requests", fail_counter.value())
         completed.set()
@@ -108,8 +123,8 @@ class Runner:
 
 class ThreadSafeCounter():
 
-    def __init__(self):
-        self._counter = 0
+    def __init__(self, val = 0):
+        self._counter = val
         self._lock = Lock()
  
     def increment(self, val):
@@ -119,4 +134,8 @@ class ThreadSafeCounter():
     def value(self):
         with self._lock:
             return self._counter
+    
+    def set(self, val):
+        with self._lock:
+            self._counter = val
          
