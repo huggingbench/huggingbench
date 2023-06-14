@@ -32,6 +32,9 @@ tests = [
   'pytest==7.3.2',
 ]
 
+[project.scripts]
+runbench = "hugging_bench.main:mlperf"
+
 [tool.black]
 line-length = 120
 target-version = ['py39']
