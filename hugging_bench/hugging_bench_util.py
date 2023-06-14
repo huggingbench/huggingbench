@@ -97,6 +97,11 @@ def half_fp32(input):
                         "FP32" else input.dtype)
     return new_input
 
+def half_int64(input):
+    new_input = replace(input, dtype="INT64" if input.dtype ==
+                        "INT32" else input.dtype)
+    return new_input
+
 
 def hf_model_input(onnx_model_path: str, half=False, custom_shape_map={}):
     onnx_model = onnx.load(onnx_model_path)
@@ -108,8 +113,9 @@ def hf_model_input(onnx_model_path: str, half=False, custom_shape_map={}):
         dtype = str(input_metadata.dtype).upper()
         dtype = format_dtype(dtype)
         inputs.append(Input(name=input_name, dtype=dtype, dims=dims))
-
-    return list(map(half_fp32, inputs)) if half else inputs
+    inputs = list(map(half_fp32, inputs)) if half else inputs
+    inputs = list(map(half_int64, inputs)) if half else inputs
+    return inputs
 
 
 def hf_model_output(onnx_model_path: str, half=False, custom_shape_map={}):
@@ -122,8 +128,9 @@ def hf_model_output(onnx_model_path: str, half=False, custom_shape_map={}):
         dtype = str(output_metadata.dtype).upper()
         dtype = format_dtype(dtype)
         outputs.append(Output(name=output_name, dtype=dtype, dims=dims))
-
-    return list(map(half_fp32, outputs)) if half else outputs
+    outputs = list(map(half_fp32, outputs)) if half else outputs
+    outputs = list(map(half_int64, outputs)) if half else outputs
+    return outputs
 
 
 def format_dtype(dtype):
