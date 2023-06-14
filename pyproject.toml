@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hugging-bench-project"
+description = "Benchmark hugginfface models in different formats such and configs in Triton Inference Server"
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["Hugging Face", "Performance Benchmark", "ML model"]
+license = {text = "apache-2.0"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+        'tritonclient[all]==2.33.0',
+        'prometheus-client==0.16.0',
+        'docker==6.1.2',
+        'datasets==2.12.0',
+        'transformers==4.29.2',
+        'torchvision==0.15.2',
+        'numpy==1.24.3',  
+        'onnx==1.14.0'
+]
+dynamic = ["version"]
+
+[tool.setuptools]
+packages = ["client", "hugging_bench"]
+
+[project.optional-dependencies]
+tests = [
+  'pytest==7.3.2',
+]
+
+[project.scripts]
+runbench = "hugging_bench.main:mlperf"
+
+[tool.black]
+line-length = 120
+target-version = ['py39']
+                                                                                                    

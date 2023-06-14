@@ -8,7 +8,6 @@ LOG = logging.getLogger(__name__)
 
 
 class TritonUser(User):
-
     def __init__(self, environment, ctx: UserContext):
         super().__init__(environment)
         self.ctx = ctx
@@ -16,7 +15,7 @@ class TritonUser(User):
 
     @task
     def infer(self):
-        """ Runs inference on the triton server """
+        """Runs inference on the triton server"""
         # Locust event data
         request_meta = {
             "request_type": "infer",
@@ -38,7 +37,6 @@ class TritonUser(User):
             LOG.error("Exception: %s", err, exec_info=True)
             request_meta["exception"] = err
 
-        request_meta["response_time"] = (
-            time.perf_counter() - start_perf_counter) * 1000
+        request_meta["response_time"] = (time.perf_counter() - start_perf_counter) * 1000
         request_meta["response"] = resp.get_response()
         self.environment.events.request.fire(**request_meta)

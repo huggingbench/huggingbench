@@ -9,14 +9,14 @@ from hugging_bench.hugging_bench_config import Input
 LOG = logging.getLogger(__name__)
 
 
-DatasetAlias = Union[DatasetDict, Dataset,
-                     IterableDatasetDict, IterableDataset]
+DatasetAlias = Union[DatasetDict, Dataset, IterableDatasetDict, IterableDataset]
 
 
 class DatasetProvider:
     def get_dataset(self) -> DatasetAlias:
         """Return a dataset"""
         return self.dataset
+
 
 class DatasetIterator:
     # This is a iterator around a dataset that makes it infinitive and thread-safe
@@ -57,21 +57,22 @@ class UserContext:
 
 
 class DatasetGen(DatasetProvider):
-    """ Generates a dataset of random tensors.""" 
+    """Generates a dataset of random tensors."""
+
     TYPE_MAP = {
-    'INT64': np.int64,
-    'INT32': np.int32,
-    'INT16': np.int16,
-    'FP16': np.float16,
-    'FP32': np.float32,
-    'FP64': np.float64,
-}
+        "INT64": np.int64,
+        "INT32": np.int32,
+        "INT16": np.int16,
+        "FP16": np.float16,
+        "FP32": np.float32,
+        "FP64": np.float64,
+    }
 
     def __init__(self, inputs: list[Input], size: int = 100):
         self.inputs = inputs
         self.dataset = dict()
         for i in range(size):
-            self.dataset[i] ={input.name: self.radnom_tensor(tuple(input.dims), input.dtype) for input in inputs}
+            self.dataset[i] = {input.name: self.radnom_tensor(tuple(input.dims), input.dtype) for input in inputs}
 
     def radnom_tensor(self, dimensions_tpl, data_type):
         if data_type not in DatasetGen.TYPE_MAP:
@@ -80,7 +81,6 @@ class DatasetGen(DatasetProvider):
 
     def get_dataset(self) -> DatasetAlias:
         return self.dataset
-
 
 
 class CustomDatasetGen(DatasetGen):
