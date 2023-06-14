@@ -8,6 +8,7 @@ from client.triton_client import TritonClient
 from client.runner import RunnerConfig, Runner
 import logging
 import os
+from datetime import datetime
 
 LOG = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class ExperimentRunner:
         dataset: DatasetAlias = None,
         task=None,
         model_local_path: str = None,
+        experiment_id: str = None,
     ) -> None:
         self.hf_id = hf_id
         self.task = task
@@ -31,6 +33,10 @@ class ExperimentRunner:
 
         self.server_spec = server_spec
         self.server_spec.model_repository_dir = os.path.abspath(server_spec.model_repository_dir)
+
+        current_timestamp = datetime.now()
+        formatted_timestamp = current_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        self.experiment_id = experiment_id if experiment_id else formatted_timestamp
 
     def run(self):
         for spec in self.experiments:
@@ -59,7 +65,12 @@ class ExperimentRunner:
         median = np.median(exec_times)
         percentile_90 = np.percentile(exec_times, 90)
         percentile_99 = np.percentile(exec_times, 99)
-        res_dict = {"median": median, "90_percentile": percentile_90, "99_percentile": percentile_99}
+        res_dict = {
+            "median": median,
+            "90_percentile": percentile_90,
+            "99_percentile": percentile_99,
+            "experiment_id": self.experiment_id,
+        }
         append_to_csv(vars(spec), res_dict, self.output)
 
     def _dataset_or_default(self, input_metadata):

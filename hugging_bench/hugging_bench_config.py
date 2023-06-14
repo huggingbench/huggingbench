@@ -25,6 +25,21 @@ class ExperimentSpec:
     client_workers: int = 1
     async_clients: bool = False
 
+    def is_valid(self):
+        if self.half and self.device == "cpu":
+            return False
+
+        if self.format == "openvino" and self.half:
+            return False
+
+        if self.format == "openvino" and self.device == "cuda":
+            return False
+
+        if self.format == "trt" and self.device == "cpu":
+            return False
+
+        return True
+
 
 @dataclass
 class Format:
