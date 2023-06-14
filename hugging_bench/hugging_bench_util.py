@@ -7,8 +7,7 @@ from threading import Thread
 from typing import Dict, NamedTuple
 
 import onnx
-from polygraphy.backend.onnx.util import (get_input_metadata,
-                                          get_output_metadata)
+from polygraphy.backend.onnx.util import get_input_metadata, get_output_metadata
 
 from hugging_bench.hugging_bench_config import Input, Output
 
@@ -21,6 +20,7 @@ LOG = logging.getLogger(__name__)
 def dtype_np_type(dtype: str):
     from hugging_bench_triton import TritonConfig
     from tritonclient.utils import triton_to_np_dtype
+
     return triton_to_np_dtype(TritonConfig.DTYPE_MAP.get(dtype, None))
 
 
@@ -29,36 +29,34 @@ def print_container_logs(container, callback=None):
     Prints logs of a Docker container until a specific message appears or a timeout is reached.
     """
     for line in container.logs(stream=True, stdout=True, stderr=True):
-        log_line = line.strip().decode('utf-8')
+        log_line = line.strip().decode("utf-8")
         LOG.info(log_line)
         callback(log_line) if callback else None
 
 
 def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}, model_input=None):
     import docker
+
     client = docker.from_env()
 
-    if (not workspace):
+    if not workspace:
         workspace = os.getcwd()
 
-    volumes = {
-        workspace: {'bind': workspace, 'mode': 'rw'},
-        model_input: {'bind': "/model_input", 'mode': 'rw'}
-    }
+    volumes = {workspace: {"bind": workspace, "mode": "rw"}, model_input: {"bind": "/model_input", "mode": "rw"}}
 
     LOG.info(
-        f"Running docker image: {image_name} gpu: {gpu} volumes: {volumes} env: {env}: \ncommand: {' '.join(docker_args)}\n")
+        f"Running docker image: {image_name} gpu: {gpu} volumes: {volumes} env: {env}: \ncommand: {' '.join(docker_args)}\n"
+    )
 
     container = client.containers.run(
         image_name,
         command=docker_args,
         volumes=volumes,
-        device_requests=[
-            docker.types.DeviceRequest(device_ids=["0"], capabilities=[['gpu']])] if gpu else [],
+        device_requests=[docker.types.DeviceRequest(device_ids=["0"], capabilities=[["gpu"]])] if gpu else [],
         working_dir=workspace,
         detach=True,
         environment=env,
-        auto_remove=True
+        auto_remove=True,
     )
 
     t = Thread(target=print_container_logs, args=[container])
@@ -93,8 +91,7 @@ def get_dim_value(dim, custom_shape_map):
 
 
 def half_fp32(input):
-    new_input = replace(input, dtype="FP16" if input.dtype ==
-                        "FP32" else input.dtype)
+    new_input = replace(input, dtype="FP16" if input.dtype == "FP32" else input.dtype)
     return new_input
 
 
@@ -103,8 +100,7 @@ def hf_model_input(onnx_model_path: str, half=False, custom_shape_map={}):
     input_metadata_dict = get_input_metadata(onnx_model.graph)
     inputs = []
     for input_name, input_metadata in input_metadata_dict.items():
-        dims = [get_dim_value(dim, custom_shape_map)
-                for dim in input_metadata.shape if dim != "batch_size"]
+        dims = [get_dim_value(dim, custom_shape_map) for dim in input_metadata.shape if dim != "batch_size"]
         dtype = str(input_metadata.dtype).upper()
         dtype = format_dtype(dtype)
         inputs.append(Input(name=input_name, dtype=dtype, dims=dims))
@@ -117,8 +113,7 @@ def hf_model_output(onnx_model_path: str, half=False, custom_shape_map={}):
     output_metadata_dict = get_output_metadata(onnx_model.graph)
     outputs = []
     for output_name, output_metadata in output_metadata_dict.items():
-        dims = [get_dim_value(dim, custom_shape_map) for dim in list(
-            output_metadata.shape) if dim != "batch_size"]
+        dims = [get_dim_value(dim, custom_shape_map) for dim in list(output_metadata.shape) if dim != "batch_size"]
         dtype = str(output_metadata.dtype).upper()
         dtype = format_dtype(dtype)
         outputs.append(Output(name=output_name, dtype=dtype, dims=dims))
@@ -127,9 +122,9 @@ def hf_model_output(onnx_model_path: str, half=False, custom_shape_map={}):
 
 
 def format_dtype(dtype):
-    if (dtype == 'FLOAT32'):
+    if dtype == "FLOAT32":
         return "FP32"
-    elif (dtype == 'FLOAT16'):
+    elif dtype == "FLOAT16":
         return "FP16"
     else:
         return dtype
@@ -163,7 +158,7 @@ def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
     # Check if the file exists to only write the header once
     file_exists = os.path.isfile(csv_file)
 
-    with open(csv_file, 'a', newline='') as f:
+    with open(csv_file, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
 
         if not file_exists:

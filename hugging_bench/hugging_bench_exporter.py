@@ -1,10 +1,8 @@
 import logging
 import os
 
-from hugging_bench.hugging_bench_config import (ExperimentSpec, Format,
-                                                ModelInfo)
-from hugging_bench.hugging_bench_util import (PRINT_HEADER, hf_model_input,
-                                              hf_model_output, run_docker_sdk)
+from hugging_bench.hugging_bench_config import ExperimentSpec, Format, ModelInfo
+from hugging_bench.hugging_bench_util import PRINT_HEADER, hf_model_input, hf_model_output, run_docker_sdk
 
 LOG = logging.getLogger(__name__)
 
@@ -16,38 +14,49 @@ class ModelExporter:
         self.hf_id = hf_id
         self.spec = spec
         self.task = task
-        self.base_dir = os.path.abspath(
-            base_dir) if (base_dir) else os.getcwd()
+        self.base_dir = os.path.abspath(base_dir) if (base_dir) else os.getcwd()
 
     def export(self, model_input_path: str = None) -> ModelInfo:
         #  onnx format is a starting point
         onnx_model_info = self._export_hf2onnx(
-            "0.001", self.spec.device, self.spec.half, model_input_path, self.spec.batch_size, self.spec.client_workers)
-        inputs = hf_model_input(
-            onnx_model_info.model_file_path(), half=onnx_model_info.half())
-        outputs = hf_model_output(
-            onnx_model_info.model_file_path(), half=onnx_model_info.half())
-        onnx_model_info = onnx_model_info.with_shapes(
-            input_shape=inputs, output_shape=outputs)
+            "0.001", self.spec.device, self.spec.half, model_input_path, self.spec.batch_size, self.spec.client_workers
+        )
+        inputs = hf_model_input(onnx_model_info.model_file_path(), half=onnx_model_info.half())
+        outputs = hf_model_output(onnx_model_info.model_file_path(), half=onnx_model_info.half())
+        onnx_model_info = onnx_model_info.with_shapes(input_shape=inputs, output_shape=outputs)
 
-        if (self.spec.format == "onnx"):
+        if self.spec.format == "onnx":
             return onnx_model_info
-        elif (self.spec.format == "openvino"):
+        elif self.spec.format == "openvino":
             return self._export_onnx2openvino(onnx_model_info)
-        elif (self.spec.format == "trt"):
+        elif self.spec.format == "trt":
             return self._export_onnx2trt(onnx_model_info)
         else:
             raise Exception(f"Unknown format {self.spec.format}")
 
-    def _export_hf2onnx(self, atol=0.001, device=None, half=False, model_input: str = None, batch_size: int = 1, client_workers: int = 1) -> ModelInfo:
+    def _export_hf2onnx(
+        self, atol=0.001, device=None, half=False, model_input: str = None, batch_size: int = 1, client_workers: int = 1
+    ) -> ModelInfo:
         LOG.info(PRINT_HEADER % " ONNX EXPORT ")
 
-        onnx_model_info = ModelInfo(self.hf_id, self.task, Format(
-            "onnx", {"atol": atol, "device": device, "half": half, "batch_size": batch_size, "client_workers": client_workers}), base_dir=self.base_dir)
+        onnx_model_info = ModelInfo(
+            self.hf_id,
+            self.task,
+            Format(
+                "onnx",
+                {
+                    "atol": atol,
+                    "device": device,
+                    "half": half,
+                    "batch_size": batch_size,
+                    "client_workers": client_workers,
+                },
+            ),
+            base_dir=self.base_dir,
+        )
 
-        if (all(os.path.exists(file) for file in onnx_model_info.model_file_path())):
-            LOG.info(
-                f"Model already exists at {onnx_model_info.model_file_path()}")
+        if all(os.path.exists(file) for file in onnx_model_info.model_file_path()):
+            LOG.info(f"Model already exists at {onnx_model_info.model_file_path()}")
             return onnx_model_info
 
         model_dir = onnx_model_info.model_dir()
@@ -55,27 +64,21 @@ class ModelExporter:
 
         model_arg = f"--model={self.hf_id}" if model_input is None else f"--model=/model_input"
 
-        cmd = [
-            "optimum-cli", "export", "onnx",
-            model_arg,
-            "--framework=pt",
-            "--monolit",
-            f"--atol={atol}"]
+        cmd = ["optimum-cli", "export", "onnx", model_arg, "--framework=pt", "--monolit", f"--atol={atol}"]
 
-        if (not half and device):
+        if not half and device:
             cmd.append(f"--device={device}")
 
-        if (half):
+        if half:
             cmd.append("--fp16")
             cmd.append("--device=cuda")
 
-        if (self.task):
+        if self.task:
             cmd.append(f"--task={self.task}")
 
         cmd.append(onnx_model_info.model_dir())
 
-        run_docker_sdk("optimum", model_dir, cmd,
-                       onnx_model_info.gpu_enabled(), model_input=model_input)
+        run_docker_sdk("optimum", model_dir, cmd, onnx_model_info.gpu_enabled(), model_input=model_input)
 
         return onnx_model_info
 
@@ -87,22 +90,28 @@ class ModelExporter:
             format=Format("openvino", origin=onnx_model_info.format),
             base_dir=self.base_dir,
             input_shape=onnx_model_info.input_shape,
-            output_shape=onnx_model_info.output_shape)
+            output_shape=onnx_model_info.output_shape,
+        )
 
         # this is kind of hack as current version of openvino in triton server does not suppot dynamic shape and shape can not take -1.
         custom_shape_map = {"sequence_length": self.spec.sequence_length}
-        input_shape = hf_model_input(onnx_model_path=onnx_model_info.model_file_path(),
-                                     half=onnx_model_info.half(),
-                                     custom_shape_map=custom_shape_map)
-        output_shape = hf_model_output(onnx_model_path=onnx_model_info.model_file_path(),
-                                       half=onnx_model_info.half(),
-                                       custom_shape_map=custom_shape_map)
+        input_shape = hf_model_input(
+            onnx_model_path=onnx_model_info.model_file_path(),
+            half=onnx_model_info.half(),
+            custom_shape_map=custom_shape_map,
+        )
+        output_shape = hf_model_output(
+            onnx_model_path=onnx_model_info.model_file_path(),
+            half=onnx_model_info.half(),
+            custom_shape_map=custom_shape_map,
+        )
         ov_model_info = ov_model_info.with_shapes(input_shape, output_shape)
 
         model_dir = ov_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
         input_str = ",".join(
-            [f"{input.name}{[self.spec.sequence_length] + input.dims}" for input in ov_model_info.input_shape])
+            [f"{input.name}{[self.spec.sequence_length] + input.dims}" for input in ov_model_info.input_shape]
+        )
         cmd = [
             "mo",
             f"--input_model={onnx_model_info.model_file_path()}",
@@ -121,13 +130,13 @@ class ModelExporter:
             Format("trt", origin=onnx_onnx_model_info.format),
             self.base_dir,
             input_shape=onnx_onnx_model_info.input_shape,
-            output_shape=onnx_onnx_model_info.output_shape)
+            output_shape=onnx_onnx_model_info.output_shape,
+        )
 
         model_dir = trt_onnx_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
 
-        input_str = ' '.join(
-            [f"{input.name}:{input.dims}" for input in trt_onnx_model_info.input_shape])
+        input_str = " ".join([f"{input.name}:{input.dims}" for input in trt_onnx_model_info.input_shape])
 
         cmd = [
             "polygraphy",
@@ -136,14 +145,16 @@ class ModelExporter:
             "--convert-to=trt",
             f"--input-shapes={input_str}",
             f"--output={trt_onnx_model_info.model_file_path()[0]}",
-            onnx_onnx_model_info.model_file_path()[0]
+            onnx_onnx_model_info.model_file_path()[0],
         ]
-        run_docker_sdk(
-            image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=cmd, gpu=True)
+        run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=cmd, gpu=True)
         return trt_onnx_model_info
 
     def _inspect_onnx(self, onnx_model_info: ModelInfo):
         LOG.info(PRINT_HEADER % " ONNX MODEL INSPECTION ")
 
-        run_docker_sdk(image_name="nvcr.io/nvidia/tensorrt:23.04-py3", docker_args=[
-                       "polygraphy", "inspect", "model", f"{onnx_model_info.model_file_path()[0]}", "--mode=onnx"], env={"POLYGRAPHY_AUTOINSTALL_DEPS": 1})
+        run_docker_sdk(
+            image_name="nvcr.io/nvidia/tensorrt:23.04-py3",
+            docker_args=["polygraphy", "inspect", "model", f"{onnx_model_info.model_file_path()[0]}", "--mode=onnx"],
+            env={"POLYGRAPHY_AUTOINSTALL_DEPS": 1},
+        )

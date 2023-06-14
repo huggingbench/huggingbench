@@ -26,7 +26,6 @@ class ExperimentSpec:
     async_clients: bool = False
 
 
-
 @dataclass
 class Format:
     format_type: str  # onnx, openvino, torchscript, tensorflow
@@ -34,16 +33,12 @@ class Format:
     origin: "Format" = None
 
     def gpu_enabled(self):
-        if self.parameters.get("device") == "cuda" or (
-            self.origin and self.origin.parameters.get("device") == "cuda"
-        ):
+        if self.parameters.get("device") == "cuda" or (self.origin and self.origin.parameters.get("device") == "cuda"):
             return True
         return False
 
     def half(self):
-        if self.parameters.get("half", False) or (
-            self.origin and self.origin.parameters.get("half", False)
-        ):
+        if self.parameters.get("half", False) or (self.origin and self.origin.parameters.get("half", False)):
             return True
         return False
 
@@ -73,11 +68,7 @@ class ModelInfo:
 
     def unique_name(self):
         params_str = f"-{self.param_str()}" if (self.param_str()) else ""
-        return (
-            f"{self.hf_id}-{self.task}-{self.format.format_type}{params_str}".replace(
-                "/", "-"
-            )
-        )
+        return f"{self.hf_id}-{self.task}-{self.format.format_type}{params_str}".replace("/", "-")
 
     def model_dir(self):
         return os.path.join(os.path.abspath(self.base_dir), self.unique_name())
@@ -86,9 +77,7 @@ class ModelInfo:
         if self.format.format_type == "onnx":
             return os.path.join(self.model_dir(), "model.onnx")
         elif self.format.format_type == "openvino":
-            return os.path.join(self.model_dir(), "model.xml"), os.path.join(
-                self.model_dir(), "model.bin"
-            )
+            return os.path.join(self.model_dir(), "model.xml"), os.path.join(self.model_dir(), "model.bin")
         elif self.format.format_type == "trt":
             return os.path.join(self.model_dir(), "model.plan")
         else:
@@ -97,9 +86,7 @@ class ModelInfo:
     def param_str(self):
         format_params = "-".join(sorted(map(str, self.format.parameters.values())))
         if self.format.origin:
-            origin_params = "-".join(
-                sorted(map(str, self.format.origin.parameters.values()))
-            )
+            origin_params = "-".join(sorted(map(str, self.format.origin.parameters.values())))
             format_params += origin_params
         return format_params
 
@@ -110,9 +97,7 @@ class ModelInfo:
         return self.format.half()
 
     def with_shapes(self, input_shape, output_shape):
-        return self.__class__(
-            self.hf_id, self.task, self.format, self.base_dir, input_shape, output_shape
-        )
+        return self.__class__(self.hf_id, self.task, self.format, self.base_dir, input_shape, output_shape)
 
     def tags(self):
         return {

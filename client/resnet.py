@@ -16,7 +16,6 @@ log = logging.getLogger(__name__)
 
 
 class ResnetDataset(DatasetProvider):
-
     def __init__(self, dataset_name: str = DATASET_NAME) -> None:
         self.dataset_name = dataset_name
         dataset = load_dataset(self.dataset_name, split="test")
@@ -26,25 +25,25 @@ class ResnetDataset(DatasetProvider):
         self.input_names = input_names
         self.dataset = dataset.with_transform(self.transform)
 
-
     def transform(self, dataset):
-        img_transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-        ])
+        img_transform = transforms.Compose(
+            [
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+            ]
+        )
 
         # We need to convert the image to tensor
         # and then tensor to numpy (triton user operates on numpy arrays)
-        dataset[self.input_names[0]] = [img_transform(
-            image).numpy() for image in dataset[DATASET_COLUMN_NAME]]
+        dataset[self.input_names[0]] = [img_transform(image).numpy() for image in dataset[DATASET_COLUMN_NAME]]
         return dataset
 
+
 class ResnetGenDataset(DatasetGen):
-    """ Dataset with random tensors """
+    """Dataset with random tensors"""
+
     inputs = [Input(name="pixel_values", dtype="FP32", dims=[3, 224, 224])]
 
     def __init__(self):
         super().__init__(ResnetGenDataset.inputs)
-
-

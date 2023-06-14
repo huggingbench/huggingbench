@@ -8,5 +8,4 @@ class ResnetUser(TritonUser):
     dataset = DatasetIterator(ResnetDataset(DATASET_NAME).dataset)
 
     def __init__(self, environment):
-        super().__init__(environment, UserContext(
-            ResnetUser.dataset, MODEL_NAME, MODEL_VERSION))
+        super().__init__(environment, UserContext(ResnetUser.dataset, MODEL_NAME, MODEL_VERSION))

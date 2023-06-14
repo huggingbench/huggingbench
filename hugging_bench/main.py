@@ -2,6 +2,7 @@ from hugging_bench.hugging_bench_config import ExperimentSpec, TritonServerSpec
 from hugging_bench.hugging_bench_runner import ExperimentRunner
 import argparse
 
+
 def mlperf():
     # Create the argument parser
     parser = argparse.ArgumentParser(description="runbench options")
@@ -26,4 +27,9 @@ def mlperf():
     hf_ids = args.hf_ids
 
     for hf_id in hf_ids:
-        ExperimentRunner(hf_id, [ExperimentSpec(format=format_type, device=device, half=half, client_workers=client_worker)], TritonServerSpec(), dataset=None).run()
+        ExperimentRunner(
+            hf_id,
+            [ExperimentSpec(format=format_type, device=device, half=half, client_workers=client_worker)],
+            TritonServerSpec(),
+            dataset=None,
+        ).run()
