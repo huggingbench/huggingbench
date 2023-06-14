@@ -12,6 +12,25 @@ python3 -m pip install -e .
 run
 `pytest`
 
+#### Run reproducable benchmarks with CLI
+`runbench --format onnx --hf_ids "bert-base-uncased" "distilbert-base-uncased" "microsoft/resnet-5"`
+
+```
+runbench --help
+usage: runbench [-h] [--format {onnx,trt,openvino}] [--device {cpu,cuda}] [--half HALF] [--client_worker CLIENT_WORKER]
+                [--hf_ids [HF_IDS ...]]
+
+runbench options
+
+options:
+  -h, --help            show this help message and exit
+  --format {onnx,trt,openvino}
+  --device {cpu,cuda}
+  --half HALF
+  --client_worker CLIENT_WORKER
+  --hf_ids [HF_IDS ...]
+```
+
 ### inspect input output shape
 `polygraphy inspect model model.onnx --mode=onnx`
 no pytorch support but there are other ways surely!!!?
