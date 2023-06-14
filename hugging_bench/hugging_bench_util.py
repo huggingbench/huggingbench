@@ -114,7 +114,7 @@ def hf_model_input(onnx_model_path: str, half=False, int64to32=False, custom_sha
 
     inputs = list(map(half_fp32, inputs)) if half else inputs
     inputs = list(map(half_int64, inputs)) if int64to32 else inputs
-    return list(map(half_fp32, inputs)) if half else inputs
+    return inputs
 
 
 def hf_model_output(onnx_model_path: str, half=False, custom_shape_map={}):

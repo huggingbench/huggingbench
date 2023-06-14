@@ -77,10 +77,10 @@ class ModelExporter:
             f"--atol={atol}",
         ]
 
-        if not half and device:
-            cmd.append(f"--device={device}")
+        if not self.spec.half and self.spec.device:
+            cmd.append(f"--device={self.spec.device}")
 
-        if half:
+        if self.spec.half:
             cmd.append("--fp16")
             cmd.append("--device=cuda")
 
