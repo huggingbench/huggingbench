@@ -63,6 +63,8 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
     t.start()
     exit_code = container.wait()
     t.join()
+    if exit_code["StatusCode"] != 0:
+        raise Exception(f"Container failed {exit_code}")
     LOG.info(f"Docker container exit code {exit_code}")
     return exit_code
 
@@ -95,7 +97,12 @@ def half_fp32(input):
     return new_input
 
 
-def hf_model_input(onnx_model_path: str, half=False, custom_shape_map={}):
+def half_int64(input):
+    new_input = replace(input, dtype="INT32" if input.dtype == "INT64" else input.dtype)
+    return new_input
+
+
+def hf_model_input(onnx_model_path: str, half=False, int64to32=False, custom_shape_map={}):
     onnx_model = onnx.load(onnx_model_path)
     input_metadata_dict = get_input_metadata(onnx_model.graph)
     inputs = []
@@ -105,6 +112,8 @@ def hf_model_input(onnx_model_path: str, half=False, custom_shape_map={}):
         dtype = format_dtype(dtype)
         inputs.append(Input(name=input_name, dtype=dtype, dims=dims))
 
+    inputs = list(map(half_fp32, inputs)) if half else inputs
+    inputs = list(map(half_int64, inputs)) if int64to32 else inputs
     return list(map(half_fp32, inputs)) if half else inputs
 
 

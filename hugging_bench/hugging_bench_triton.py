@@ -25,6 +25,8 @@ class TritonConfig:
     DTYPE_MAP = MappingProxyType(
         {
             "INT64": DataType.TYPE_INT64,
+            "INT32": DataType.TYPE_INT32,
+            "INT16": DataType.TYPE_INT16,
             "FP32": DataType.TYPE_FP32,
             "FP16": DataType.TYPE_FP16,
             # add more dtype mappings if needed
