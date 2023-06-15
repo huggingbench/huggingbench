@@ -16,36 +16,27 @@ LOG = logging.getLogger(__name__)
 class ExperimentRunner:
     def __init__(
         self,
-        hf_id: str,
         experiments: list[ExperimentSpec],
         server_spec: TritonServerSpec,
         dataset: DatasetAlias = None,
-        task=None,
-        model_local_path: str = None,
-        experiment_id: str = None,
     ) -> None:
-        self.hf_id = hf_id
-        self.task = task
         self.dataset = dataset
-        self.output = f"{TEMP_DIR}/" + self.hf_id.replace("/", "-") + ".csv"
         self.experiments = experiments
-        self.model_local_path = model_local_path
-
         self.server_spec = server_spec
         self.server_spec.model_repository_dir = os.path.abspath(server_spec.model_repository_dir)
 
-        current_timestamp = datetime.now()
-        formatted_timestamp = current_timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        self.experiment_id = experiment_id if experiment_id else formatted_timestamp
-
     def run(self):
         for spec in self.experiments:
-            exporter = ModelExporter(self.hf_id, spec, self.task, TEMP_DIR)
-            model_info = exporter.export(self.model_local_path)
-            triton_config = TritonConfig(self.server_spec, model_info).create_model_repo(spec.batch_size)
+            exporter = ModelExporter(spec.hf_id, spec, spec.task, TEMP_DIR)
+            model_info = exporter.export(spec.model_local_path)
+            triton_config = TritonConfig(self.server_spec, model_info, spec).create_model_repo(spec.batch_size)
             triton_server = TritonServer(triton_config)
             triton_server.start()
-            triton_client = TritonClient("localhost:{}".format(self.server_spec.http_port), model_info.unique_name(), max_paralell_requests=spec.client_workers)
+            triton_client = TritonClient(
+                "localhost:{}".format(self.server_spec.http_port),
+                model_info.unique_name(),
+                max_paralell_requests=spec.client_workers,
+            )
             runner_config = RunnerConfig(batch_size=spec.batch_size, workers=spec.client_workers)
             client_runner = Runner(runner_config, triton_client, self._dataset_or_default(triton_client.inputs))
             success = False
@@ -68,14 +59,18 @@ class ExperimentRunner:
         median = np.median(exec_times)
         percentile_90 = np.percentile(exec_times, 90)
         percentile_99 = np.percentile(exec_times, 99)
+        current_timestamp = datetime.now()
+        formatted_timestamp = current_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        experiment_id = formatted_timestamp
         res_dict = {
             "success_rate": success_rate,
             "median": median,
             "90_percentile": percentile_90,
             "99_percentile": percentile_99,
-            "experiment_id": self.experiment_id,
+            "experiment_id": experiment_id,
         }
-        append_to_csv(vars(spec), res_dict, self.output)
+        output_file = f"{TEMP_DIR}/" + spec.hf_id.replace("/", "-") + ".csv"
+        append_to_csv(vars(spec), res_dict, output_file)
 
     def _dataset_or_default(self, input_metadata):
         if self.dataset:

@@ -7,7 +7,7 @@ def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
 
     # Extract required columns
     labels = df[
-        ["format", "device", "half", "batch_size", "sequence_length", "client_workers", "async_clients", "success_rate"]
+        ["format", "device", "half", "batch_size", "sequence_length", "client_workers", "async_client", "success_rate"]
     ]
     median_latencies = df["median"]
     percentile90_latencies = df["90_percentile"]

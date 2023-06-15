@@ -36,15 +36,9 @@ def mlperf():
     parser.add_argument(
         "--task", default=None, nargs="*", help="Model task(s) to benchmark. Used with --model_local_path"
     )
-    parser.add_argument(
-        "--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference.."
-    )
-    parser.add_argument(
-        "--instance_count", default=1, type=int, help="Triton server instance count."
-    )
-    parser.add_argument(
-        "--async_client", default=False, type=bool, help="Use async triton client."
-    )
+    parser.add_argument("--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference..")
+    parser.add_argument("--instance_count", default=1, type=int, help="Triton server instance count.")
+    parser.add_argument("--async_client", default=False, type=bool, help="Use async triton client.")
 
     #  potential hf_ids: ["bert-base-uncased", "distilbert-base-uncased", "microsoft/resnet-5"]
 
@@ -61,28 +55,37 @@ def mlperf():
     task = args.task
     batch_size = args.batch_size
     async_client = args.async_client
+    instance_count = args.instance_count
 
     experiments = []
-    for f in format_types:
-        for d in devices:
-            for h in half:
-                for w in client_workers:
-                    for b in batch_size:
-                        experiment = ExperimentSpec(format=f, device=d, half=h, client_workers=w, batch_size=b, async_clients=async_client)
-                        if experiment.is_valid():
-                            LOG.info(f"Adding valid experiment: {experiment}")
-                            experiments.append(experiment)
-                        else:
-                            LOG.info(f"Skipping invalid experiment: {experiment}")
-
     for idx, hf_id in enumerate(hf_ids):
+        for f in format_types:
+            for d in devices:
+                for h in half:
+                    for w in client_workers:
+                        for b in batch_size:
+                            experiment = ExperimentSpec(
+                                hf_id=hf_id,
+                                task=task[idx] if task else None,
+                                model_local_path=model_local_path[idx] if model_local_path else None,
+                                format=f,
+                                device=d,
+                                half=h,
+                                client_workers=w,
+                                batch_size=b,
+                                async_client=async_client,
+                                instance_count=instance_count,
+                            )
+                            if experiment.is_valid():
+                                LOG.info(f"Adding valid experiment: {experiment}")
+                                experiments.append(experiment)
+                            else:
+                                LOG.info(f"Skipping invalid experiment: {experiment}")
+
         ExperimentRunner(
-            hf_id,
             experiments,
-            TritonServerSpec(instance_count=args.instance_count),
+            TritonServerSpec(),
             dataset=None,
-            model_local_path=model_local_path[idx] if model_local_path else None,
-            task=task[idx] if task else None,
         ).run()
 
 

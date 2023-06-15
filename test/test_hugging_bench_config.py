@@ -46,15 +46,6 @@ def test_with_shapes(onnx_model_info):
     assert new_model_info.output_shape == output_shape
 
 
-def test_tags(onnx_model_info):
-    tags = onnx_model_info.tags()
-    assert tags["hf_id"] == "hf_model_id"
-    assert tags["task"] == "classification"
-    assert tags["format"] == "onnx"
-    assert tags["gpu"] == "True"
-    assert tags["half"] == "True"
-
-
 @pytest.fixture
 def trt_model_info():
     format_params = {"device": "cuda", "half": False}
@@ -94,12 +85,3 @@ def test_trt_with_shapes(trt_model_info):
     new_model_info = trt_model_info.with_shapes(input_shape, output_shape)
     assert new_model_info.input_shape == input_shape
     assert new_model_info.output_shape == output_shape
-
-
-def test_trt_tags(trt_model_info):
-    tags = trt_model_info.tags()
-    assert tags["hf_id"] == "model_id"
-    assert tags["task"] == "classification"
-    assert tags["format"] == "trt"
-    assert tags["gpu"] == "True"
-    assert tags["half"] == "False"

@@ -13,7 +13,7 @@ from types import MappingProxyType
 from hugging_bench.hugging_bench_util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, print_container_logs
 import os, logging
 import multiprocessing
-from hugging_bench.hugging_bench_config import TritonServerSpec
+from hugging_bench.hugging_bench_config import TritonServerSpec, ExperimentSpec
 
 # multiprocessing.set_start_method('spawn')
 
@@ -42,12 +42,12 @@ class TritonConfig:
         }
     )
 
-    def __init__(self, server_spec: TritonServerSpec, model_info: ModelInfo) -> None:
+    def __init__(self, server_spec: TritonServerSpec, model_info: ModelInfo, experiment: ExperimentSpec) -> None:
         self.model_info = model_info
         self.model_repo = os.path.abspath(server_spec.model_repository_dir)
         self.grpc_port = server_spec.grpc_port
         self.http_port = server_spec.http_port
-        self.instance_count = server_spec.instance_count
+        self.experiment = experiment
 
     def create_model_repo(self, max_batch_size=1):
         from google.protobuf import text_format
@@ -129,7 +129,7 @@ class TritonConfig:
         else:
             raise Exception(f"Unsupported model format {self.model_info.format.format_type}")
         # add tags from model_info, we could add other tags as well as needed
-        for key, value in self.model_info.tags().items():
+        for key, value in self.experiment.metric_tags().items():
             model_config.metric_tags[key] = value
         return model_config
 
@@ -160,14 +160,13 @@ class TritonConfig:
     def _instance_group(self):
         return [
             ModelInstanceGroup(
-                count=self.instance_count,
+                count=self.experiment.instance_count,
                 kind=ModelInstanceGroup.KIND_GPU if self.model_info.gpu_enabled() else ModelInstanceGroup.KIND_CPU,
             )
         ]
 
 
 import docker
-import time
 
 
 class TritonServer:  # This is just a placeholder. Replace it with your actual class.

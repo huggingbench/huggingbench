@@ -9,22 +9,24 @@ TEMP_MODEL_REPO_DIR = f"{TEMP_DIR}/model_repository"
 
 @dataclass
 class TritonServerSpec:
-    # TODO ports not used yet
     grpc_port: int = 8001
     http_port: int = 8000
     model_repository_dir: str = TEMP_MODEL_REPO_DIR
-    instance_count: int = 1
 
 
 @dataclass
 class ExperimentSpec:
+    hf_id: str
     format: str
     device: str
     half: bool
+    task: str = None
     batch_size: int = 1
     sequence_length: int = 100
     client_workers: int = 1
-    async_clients: bool = False
+    async_client: bool = False
+    instance_count: int = 1
+    model_local_path: str = None
 
     def is_valid(self):
         if self.half and self.device == "cpu":
@@ -40,6 +42,19 @@ class ExperimentSpec:
             return False
 
         return True
+
+    def metric_tags(self):
+        return {
+            "hf_id": self.hf_id,
+            "task": self.task if self.task else "",
+            "format": self.format,
+            "gpu": str(self.device == "cuda"),
+            "half": str(self.half),
+            "batch_size": str(self.batch_size),
+            "sequence_length": str(self.sequence_length),
+            "client_workers": str(self.client_workers),
+            "async_client": str(self.async_client),
+        }
 
 
 @dataclass
