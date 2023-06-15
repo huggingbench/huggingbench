@@ -117,6 +117,7 @@ class Runner:
         for f in as_completed(futures):
             future_result(f)
         LOG.info("Processed all items")
+        executor.shutdown(wait=True, cancel_futures=True)
         LOG.info("Finished client runner")
         if fail_counter.value() > 0:
             LOG.warn("Failed %d requests", fail_counter.value())

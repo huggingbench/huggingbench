@@ -13,6 +13,7 @@ class TritonServerSpec:
     grpc_port: int = 8001
     http_port: int = 8000
     model_repository_dir: str = TEMP_MODEL_REPO_DIR
+    instance_count: int = 1
 
 
 @dataclass

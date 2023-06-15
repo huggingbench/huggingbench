@@ -8,7 +8,7 @@
 from threading import Thread
 import threading
 from hugging_bench.hugging_bench_config import ModelInfo
-from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
+from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType, ModelInstanceGroup
 from types import MappingProxyType
 from hugging_bench.hugging_bench_util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, print_container_logs
 import os, logging
@@ -47,6 +47,7 @@ class TritonConfig:
         self.model_repo = os.path.abspath(server_spec.model_repository_dir)
         self.grpc_port = server_spec.grpc_port
         self.http_port = server_spec.http_port
+        self.instance_count = server_spec.instance_count
 
     def create_model_repo(self, max_batch_size=1):
         from google.protobuf import text_format
@@ -93,6 +94,7 @@ class TritonConfig:
                 input=self._model_input(),
                 output=self._model_output(),
                 platform=self.BACKEND_MAP.get(self.model_info.format.format_type),
+                instance_group=self._instance_group(),
             )
         elif self.model_info.format.format_type == "openvino":
             model_config = ModelConfig(
@@ -101,6 +103,7 @@ class TritonConfig:
                 input=self._model_input(),
                 output=self._model_output(),
                 backend=self.BACKEND_MAP.get(self.model_info.format.format_type),
+                instance_group=self._instance_group(),
             )
 
             from tritonclient.grpc.model_config_pb2 import ModelParameter
@@ -121,6 +124,7 @@ class TritonConfig:
                 input=self._model_input(),
                 output=self._model_output(),
                 platform=self.BACKEND_MAP.get(self.model_info.format.format_type),
+                instance_group=self._instance_group(),
             )
         else:
             raise Exception(f"Unsupported model format {self.model_info.format.format_type}")
@@ -151,6 +155,16 @@ class TritonConfig:
                 dims=output.dims,
             )
             for output in self.model_info.output_shape
+        ]
+
+    def _instance_group(self):
+        return [
+            ModelInstanceGroup(
+                count=self.instance_count,
+                kind=ModelInstanceGroup.KIND_GPU
+                if self.model_info.gpu_enabled()
+                else ModelInstanceGroup.KIND_CPU,
+            )
         ]
 
 
