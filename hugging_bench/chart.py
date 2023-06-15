@@ -38,7 +38,7 @@ def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
 
     ax1.set_xlabel("Configuration")
     ax1.set_ylabel("Median Latency")
-    ax1.set_title("Comparison of Median Latencies", ha="left")
+    ax1.set_title("Comparison of Median Latencies", loc="left")
 
     # Create the chart for 90th percentiles
     ax2.bar(x_ticks, percentile90_latencies)
@@ -59,7 +59,7 @@ def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
 
     ax2.set_xlabel("Configuration")
     ax2.set_ylabel("90th Percentile Latency")
-    ax2.set_title("Comparison of 90th Percentile Latencies")
+    ax2.set_title("Comparison of 90th Percentile Latencies", loc="left")
 
     # Create the chart for 99th percentiles
     ax3.bar(x_ticks, percentile99_latencies)
@@ -80,7 +80,7 @@ def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
 
     ax3.set_xlabel("Configuration")
     ax3.set_ylabel("99th Percentile Latency")
-    ax3.set_title("Comparison of 99th Percentile Latencies")
+    ax3.set_title("Comparison of 99th Percentile Latencies", loc="left")
 
     # Adjust spacing between subplots and ensure labels fit
     plt.tight_layout()
