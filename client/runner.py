@@ -101,6 +101,7 @@ class Runner:
 
         batch = []
         futures = []
+        first_request_time = timer()
         LOG.info("Processed 0 of %d items", total)
         for sample in self.dataset:
             batch.append(sample)
@@ -120,10 +121,13 @@ class Runner:
         if fail_counter.value() > 0:
             LOG.warn("Failed %d requests", fail_counter.value())
         completed.set()
+        last_request_time = timer()
+        success_rate = success_counter.value() / (last_request_time - first_request_time)
+        failure_rate = fail_counter.value() / (last_request_time - first_request_time)
         # Convert execution times to a numpy array
         execution_times = self.execution_times
         self.execution_times = []
-        return execution_times
+        return execution_times, success_rate, failure_rate, total, success_counter.value()
 
 
 class ThreadSafeCounter:
