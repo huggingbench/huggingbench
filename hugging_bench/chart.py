@@ -20,9 +20,12 @@ def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
     fig3, ax3 = plt.subplots(figsize=(12, 6))
     fig4, ax4 = plt.subplots(figsize=(12, 6))
 
+    # Define colors based on format
+    colors = {'onnx': 'blue', 'trt': 'green', 'openvino': 'red'}
+
     # Create the chart for median latencies
     x_ticks = range(len(median_latencies))
-    ax1.bar(x_ticks, median_latencies)
+    ax1.bar(x_ticks, median_latencies, color=[colors.get(format_val, 'gray') for format_val in labels['format']])
     ax1.set_xticks(x_ticks)
     ax1.set_xticklabels([])  # Remove x-axis labels
 
@@ -43,7 +46,7 @@ def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
     ax1.set_title("Comparison of Median Latencies", loc="left")
 
     # Create the chart for 90th percentiles
-    ax2.bar(x_ticks, percentile90_latencies)
+    ax2.bar(x_ticks, percentile90_latencies, color=[colors.get(format_val, 'gray') for format_val in labels['format']])
     ax2.set_xticks(x_ticks)
     ax2.set_xticklabels([])  # Remove x-axis labels
 
@@ -64,7 +67,7 @@ def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
     ax2.set_title("Comparison of 90th Percentile Latencies", loc="left")
 
     # Create the chart for 99th percentiles
-    ax3.bar(x_ticks, percentile99_latencies)
+    ax3.bar(x_ticks, percentile99_latencies, color=[colors.get(format_val, 'gray') for format_val in labels['format']])
     ax3.set_xticks(x_ticks)
     ax3.set_xticklabels([])  # Remove x-axis labels
 
@@ -85,7 +88,7 @@ def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
     ax3.set_title("Comparison of 99th Percentile Latencies", loc="left")
 
     # Create the chart for throughput
-    ax4.bar(x_ticks, throughputs)
+    ax4.bar(x_ticks, throughputs, color=[colors.get(format_val, 'gray') for format_val in labels['format']])
     ax4.set_xticks(x_ticks)
     ax4.set_xticklabels([])  # Remove x-axis labels
 
