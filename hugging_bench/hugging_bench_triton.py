@@ -161,9 +161,7 @@ class TritonConfig:
         return [
             ModelInstanceGroup(
                 count=self.instance_count,
-                kind=ModelInstanceGroup.KIND_GPU
-                if self.model_info.gpu_enabled()
-                else ModelInstanceGroup.KIND_CPU,
+                kind=ModelInstanceGroup.KIND_GPU if self.model_info.gpu_enabled() else ModelInstanceGroup.KIND_CPU,
             )
         ]
 
