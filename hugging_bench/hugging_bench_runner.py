@@ -50,22 +50,26 @@ class ExperimentRunner:
             client_runner = Runner(runner_config, triton_client, self._dataset_or_default(triton_client.inputs))
             success = False
             try:
-                exec_times = client_runner.run()
+                exec_times, success_rate, failure_rate, total, success_count = client_runner.run()
+                LOG.info(
+                    f"Total requests: {total} Success count: {success_count} Success rate: {success_rate} Failure rate: {failure_rate}"
+                )
                 success = True
             except Exception as e:
                 LOG.error(f"Client load generation: {e}", exc_info=True)
             finally:
                 triton_server.stop()
             if success:
-                self.process_results(spec, exec_times)
+                self.process_results(spec, exec_times, success_rate)
 
-    def process_results(self, spec: ExperimentSpec, exec_times: list[float]):
+    def process_results(self, spec: ExperimentSpec, exec_times: list[float], success_rate: float):
         # Calculate percentiles and append to csv
         exec_times = np.array(exec_times)
         median = np.median(exec_times)
         percentile_90 = np.percentile(exec_times, 90)
         percentile_99 = np.percentile(exec_times, 99)
         res_dict = {
+            "success_rate": success_rate,
             "median": median,
             "90_percentile": percentile_90,
             "99_percentile": percentile_99,
@@ -81,4 +85,4 @@ class ExperimentRunner:
                 Input(name=i["name"], dtype=i["datatype"], dims=[100 if s == -1 else s for s in i["shape"]][1:])
                 for i in input_metadata.values()
             ]
-            return DatasetGen(inputs, size=500).dataset
+            return DatasetGen(inputs, size=1000).dataset
