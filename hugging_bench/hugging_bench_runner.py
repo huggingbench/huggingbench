@@ -45,7 +45,7 @@ class ExperimentRunner:
             triton_config = TritonConfig(self.server_spec, model_info).create_model_repo(spec.batch_size)
             triton_server = TritonServer(triton_config)
             triton_server.start()
-            triton_client = TritonClient("localhost:{}".format(self.server_spec.http_port), model_info.unique_name())
+            triton_client = TritonClient("localhost:{}".format(self.server_spec.http_port), model_info.unique_name(), max_paralell_requests=spec.client_workers)
             runner_config = RunnerConfig(batch_size=spec.batch_size, workers=spec.client_workers)
             client_runner = Runner(runner_config, triton_client, self._dataset_or_default(triton_client.inputs))
             success = False

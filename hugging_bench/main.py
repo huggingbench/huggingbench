@@ -16,7 +16,7 @@ def mlperf():
     # Define the command-line arguments with their default values
     parser.add_argument("--format", default=["onnx"], nargs="*", choices=["onnx", "trt", "openvino"])
     parser.add_argument("--device", default=["cpu"], nargs="*", choices=["cpu", "cuda"])
-    parser.add_argument("--half", default=[False, True], nargs="*", type=bool, help="Whether to use half precision")
+    parser.add_argument("--half", default=[False], nargs="*", type=bool, help="Whether to use half precision")
     parser.add_argument(
         "--client_worker",
         default=[1],
@@ -36,8 +36,15 @@ def mlperf():
     parser.add_argument(
         "--task", default=None, nargs="*", help="Model task(s) to benchmark. Used with --model_local_path"
     )
-    parser.add_argument("--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference..")
-    parser.add_argument("--instance_count", default=1, type=int, help="Triton server instance count.")
+    parser.add_argument(
+        "--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference.."
+    )
+    parser.add_argument(
+        "--instance_count", default=1, type=int, help="Triton server instance count."
+    )
+    parser.add_argument(
+        "--async_client", default=False, type=bool, help="Use async triton client."
+    )
 
     #  potential hf_ids: ["bert-base-uncased", "distilbert-base-uncased", "microsoft/resnet-5"]
 
@@ -53,6 +60,7 @@ def mlperf():
     model_local_path = args.model_local_path
     task = args.task
     batch_size = args.batch_size
+    async_client = args.async_client
 
     experiments = []
     for f in format_types:
@@ -60,10 +68,10 @@ def mlperf():
             for h in half:
                 for w in client_workers:
                     for b in batch_size:
-                        experiment = ExperimentSpec(format=f, device=d, half=h, client_workers=w, batch_size=b)
+                        experiment = ExperimentSpec(format=f, device=d, half=h, client_workers=w, batch_size=b, async_clients=async_client)
                         if experiment.is_valid():
                             LOG.info(f"Adding valid experiment: {experiment}")
-                            experiments.append(ExperimentSpec(format=f, device=d, half=h, client_workers=w))
+                            experiments.append(experiment)
                         else:
                             LOG.info(f"Skipping invalid experiment: {experiment}")
 
