@@ -1,4 +1,5 @@
 from gevent import monkey
+
 monkey.patch_all()
 from hugging_bench.hugging_bench_config import ExperimentSpec, TritonServerSpec
 from hugging_bench.hugging_bench_runner import ExperimentRunner
@@ -35,12 +36,8 @@ def mlperf():
     parser.add_argument(
         "--task", default=None, nargs="*", help="Model task(s) to benchmark. Used with --model_local_path"
     )
-    parser.add_argument(
-        "--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference.."
-    )
-    parser.add_argument(
-        "--instance_count", default=1, type=int, help="Triton server instance count."
-    )
+    parser.add_argument("--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference..")
+    parser.add_argument("--instance_count", default=1, type=int, help="Triton server instance count.")
 
     #  potential hf_ids: ["bert-base-uncased", "distilbert-base-uncased", "microsoft/resnet-5"]
 
