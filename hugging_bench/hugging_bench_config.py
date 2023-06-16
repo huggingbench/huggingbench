@@ -29,6 +29,9 @@ class ExperimentSpec:
     model_local_path: str = None
 
     def is_valid(self):
+        if self.format == "onnx" and self.device == "cpu" and self.half:
+            return False
+
         if self.format == "openvino" and self.device == "cuda":
             return False
 
