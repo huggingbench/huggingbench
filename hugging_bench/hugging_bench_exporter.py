@@ -70,6 +70,7 @@ class ModelExporter:
             "onnx",
             model_arg,
             "--framework=pt",
+            f"--device={self.spec.device}",
             f"--cache_dir={self.cache_dir}",
             f"--batch_size={self.spec.batch_size}",
             f"--sequence_length={self.spec.sequence_length}",
@@ -77,12 +78,12 @@ class ModelExporter:
             f"--atol={atol}",
         ]
 
-        if not self.spec.half and self.spec.device:
-            cmd.append(f"--device={self.spec.device}")
-
-        if self.spec.half:
+        # export of f16 only possible on cuda
+        if self.spec.half and self.spec.device == "cuda":
             cmd.append("--fp16")
             cmd.append("--device=cuda")
+        else:
+            LOG.info("Skipping f16 for onnx export. Device must be cuda to support f16.")
 
         if self.task:
             cmd.append(f"--task={self.task}")
@@ -129,6 +130,10 @@ class ModelExporter:
             f"--output_dir={model_dir}",
             f"--input={input_str}",
         ]
+
+        if self.spec.half:
+            cmd.append(f"--compress_to_fp16")
+
         run_docker_sdk(image_name="openvino", docker_args=cmd)
         return ov_model_info
 
