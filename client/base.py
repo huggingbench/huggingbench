@@ -12,7 +12,9 @@ LOG = logging.getLogger(__name__)
 DatasetAlias = Union[DatasetDict, Dataset, IterableDatasetDict, IterableDataset]
 
 
-class DatasetProvider:
+class BaseDataset:
+    """Base class for datasets that are loaded from huggingface datasets"""
+
     def get_dataset(self) -> DatasetAlias:
         """Return a dataset"""
         return self.dataset
@@ -56,7 +58,7 @@ class UserContext:
         self.batch_size = batch_size
 
 
-class DatasetGen(DatasetProvider):
+class DatasetGen(BaseDataset):
     """Generates a dataset of random tensors."""
 
     TYPE_MAP = {

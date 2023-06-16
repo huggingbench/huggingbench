@@ -3,7 +3,7 @@ from datasets import load_dataset
 from transformers import AutoConfig
 from transformers.models.resnet.configuration_resnet import ResNetOnnxConfig
 from torchvision import transforms
-from client.base import DatasetProvider, DatasetGen
+from client.base import BaseDataset, DatasetGen
 from hugging_bench.hugging_bench_config import Input
 
 
@@ -15,7 +15,7 @@ DATASET_COLUMN_NAME = "image"
 log = logging.getLogger(__name__)
 
 
-class ResnetDataset(DatasetProvider):
+class ResnetDataset(BaseDataset):
     def __init__(self, dataset_name: str = DATASET_NAME) -> None:
         self.dataset_name = dataset_name
         dataset = load_dataset(self.dataset_name, split="test")

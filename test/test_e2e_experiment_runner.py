@@ -16,6 +16,6 @@ def test_experiment_runner():
         ENV_TRITON_SERVER_DOCKER
     ] = "ghcr.io/niksajakovljevic/tritonserver:23.04-onnx"  # we use custom docker to reduce image size
     experiment_runner.run()
-    csv_file = Path(experiment_runner.output)
+    csv_file = Path(experiment.get_csv_output_path())
     if not csv_file.exists():
         assert False, "CSV file not generated"

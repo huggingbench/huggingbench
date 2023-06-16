@@ -2,7 +2,7 @@
 import logging
 from datasets import load_dataset
 from transformers import AutoTokenizer
-from client.base import DatasetProvider, DatasetGen
+from client.base import BaseDataset, DatasetGen
 from hugging_bench.hugging_bench_config import Input
 
 MODEL_NAME = "bert-base-uncased"
@@ -15,7 +15,7 @@ DATASET_COLUMN_NAME2 = "context"
 log = logging.getLogger(__name__)
 
 
-class BertDataset(DatasetProvider):
+class BertDataset(BaseDataset):
     def __init__(self, dataset: str = DATASET_NAME) -> None:
         self.dataset_name = dataset
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)

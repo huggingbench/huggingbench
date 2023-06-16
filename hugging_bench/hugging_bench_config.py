@@ -56,6 +56,9 @@ class ExperimentSpec:
             "async_client": str(self.async_client),
         }
 
+    def get_csv_output_path(self):
+        return f"{TEMP_DIR}/" + self.hf_id.replace("/", "-") + ".csv"
+
 
 @dataclass
 class Format:
