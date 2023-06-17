@@ -5,7 +5,7 @@
 python3 -m venv env
 source  env/bin/activate
 pip install colored polygraphy==0.47.1 --extra-index-url https://pypi.ngc.nvidia.com
-python3 -m pip install -e .
+python3 -m pip install -e . --extra-index-url https://pypi.ngc.nvidia.com
 ```
 
 #### Test
