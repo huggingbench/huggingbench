@@ -27,9 +27,6 @@ dependencies = [
 ]
 dynamic = ["version"]
 
-[tool.setuptools]
-packages = ["client", "hugging_bench"]
-
 [project.optional-dependencies]
 tests = [
   'pytest==7.3.2',
@@ -37,6 +34,11 @@ tests = [
 
 [project.scripts]
 runbench = "hugging_bench.main:mlperf"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["client", "hugging_bench"]
+namespaces = false
 
 [tool.black]
 line-length = 120
