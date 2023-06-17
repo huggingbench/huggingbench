@@ -26,7 +26,7 @@ class Runner:
 
     def run(self):
         LOG.info("Starting client runner")
-        async_reqs = queue.Queue(maxsize=200)  # Size picked arbitrarily. Sets limit on number of outstanding requests
+        async_reqs = queue.Queue(maxsize=1000)  # Size picked arbitrarily. Sets limit on number of outstanding requests
         completed = Event()
         executor = ThreadPoolExecutor(max_workers=self.config.workers)
         fail_counter = ThreadSafeCounter()
@@ -72,7 +72,9 @@ class Runner:
                         LOG.warn("Failed async request: %s", e.debug_details())
                         fail_counter.increment(1)
 
-            Thread(target=get_async_result, args=(async_reqs, completed)).start()  # process async responses
+            async_res_thread = Thread(target=get_async_result, args=(async_reqs, completed))  # process async responses
+            async_res_thread.daemon = True  # queue.get() is blocking, so we need to make sure this thread is killed
+            async_res_thread.start()
 
         item_cnt = 0
         batch_group_cnt = 0
@@ -84,7 +86,9 @@ class Runner:
             try:
                 success = f.result()
                 LOG.debug("Future completed with result: %s", success)
-                success_counter.increment(1) if success else fail_counter.increment(1)
+                if not self.config.async_req:
+                    """If not async, then we need to increment the counters here"""
+                    success_counter.increment(1) if success else fail_counter.increment(1)
             except (CancelledError, TimeoutError, Exception) as e:
                 LOG.error("future error: %s", e)
                 fail_counter.increment(1)

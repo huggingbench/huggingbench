@@ -1,6 +1,6 @@
 from gevent import monkey
 
-monkey.patch_all()
+monkey.patch_all()  # this is needed to make gevent work with Threads
 from hugging_bench.hugging_bench_config import ExperimentSpec, TritonServerSpec
 from hugging_bench.hugging_bench_runner import ExperimentRunner
 import argparse
