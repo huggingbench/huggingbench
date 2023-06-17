@@ -8,9 +8,10 @@ description = "Benchmark hugginfface models in different formats such and config
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["Hugging Face", "Performance Benchmark", "ML model"]
-license = {text = "apache-2.0"}
+license = {text = "Apache 2.0 License"}
 classifiers = [
     "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
         'tritonclient[all]==2.33.0',
