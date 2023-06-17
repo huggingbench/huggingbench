@@ -1,4 +1,4 @@
-# mlperf
+# HuggingBench
 Welcome to the HuggingBench and Open Database project! This project aims to simplify the process of benchmarking machine learning models, specifically focusing on models available on the Hugging Face Hub. We provide a user-friendly approach to deploying these models on the Triton server, utilizing various backends such as OpenVino, TensorRT, and Onnx, while also exploring the impact of Quantization.
 
 This project started as a hobby prject and it is in it's early days, but we quickly became convinced this can be a meaningful contribution to AI (particularly MLOps) community. By open-sourcing our code, we aim to empower developers and researchers to make informed decisions when deploying their models, ensuring optimal performance without compromising efficiency. Additionally, we are in process of building an open database that houses benchmark results of reproducable benchmarks for all open-source models, allowing users to easily compare and contrast performance metrics.
