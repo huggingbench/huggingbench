@@ -1,6 +1,20 @@
 # mlperf
+Welcome to the HuggingBench and Open Database project! This project aims to simplify the process of benchmarking machine learning models, specifically focusing on models available on the Hugging Face Hub. We provide a user-friendly approach to deploying these models on the Triton server, utilizing various backends such as OpenVino, TensorRT, and Onnx, while also exploring the impact of Quantization.
 
-### setup env
+This project started as a hobby prject and it is in it's early days, but we quickly became convinced this can be a meaningful contribution to AI (particularly MLOps) community. By open-sourcing our code, we aim to empower developers and researchers to make informed decisions when deploying their models, ensuring optimal performance without compromising efficiency. Additionally, we are in process of building an open database that houses benchmark results of reproducable benchmarks for all open-source models, allowing users to easily compare and contrast performance metrics.
+
+In this repository, you will find the necessary code, documentation, and examples to get started with ML model benchmarking. We encourage you to explore the different functionalities, experiment with your own models, and contribute to the growth of the open database.
+
+Join us on this exciting journey as we revolutionize ML model benchmarking and create a valuable resource for the AI community. Let's unlock the full potential of our models together!
+Happy benchmarking and welcome aboard!
+
+## Project structure
+
+## Current limitations
+
+## Roadmap
+
+### Setup
 ```
 python3 -m venv env
 source  env/bin/activate
@@ -17,18 +31,30 @@ run
 
 ```
 runbench --help
-usage: runbench [-h] [--format {onnx,trt,openvino}] [--device {cpu,cuda}] [--half HALF] [--client_worker CLIENT_WORKER]
-                [--hf_ids [HF_IDS ...]]
+usage: runbench [-h] [--format [{onnx,trt,openvino} ...]] [--device [{cpu,cuda} ...]] [--half [HALF ...]] [--client_worker [CLIENT_WORKER ...]]
+                [--hf_ids [HF_IDS ...]] [--model_local_path [MODEL_LOCAL_PATH ...]] [--task [TASK ...]] [--batch_size [BATCH_SIZE ...]]
+                [--instance_count INSTANCE_COUNT] [--async_client ASYNC_CLIENT]
 
 runbench options
 
 options:
   -h, --help            show this help message and exit
-  --format {onnx,trt,openvino}
-  --device {cpu,cuda}
-  --half HALF
-  --client_worker CLIENT_WORKER
+  --format [{onnx,trt,openvino} ...]
+  --device [{cpu,cuda} ...]
+  --half [HALF ...]     Whether to use half precision
+  --client_worker [CLIENT_WORKER ...]
+                        Number of client workers sending concurrent requests to Triton
   --hf_ids [HF_IDS ...]
+                        HuggingFace model ID(s) to benchmark
+  --model_local_path [MODEL_LOCAL_PATH ...]
+                        If not specified, will download from HuggingFace. When given a task name must also be specified.
+  --task [TASK ...]     Model task(s) to benchmark. Used with --model_local_path
+  --batch_size [BATCH_SIZE ...]
+                        Batch size(s) to use for inference..
+  --instance_count INSTANCE_COUNT
+                        Triton server instance count.
+  --async_client ASYNC_CLIENT
+                        Use async triton client.
 ```
 
 ### inspect input output shape
