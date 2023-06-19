@@ -1,7 +1,6 @@
 import csv
 import logging
 import os
-import subprocess
 from dataclasses import replace
 from threading import Thread
 from typing import Dict, NamedTuple

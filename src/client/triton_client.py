@@ -1,6 +1,5 @@
 import json
 import logging
-from types import FunctionType
 from typing import List
 
 import numpy as np

@@ -1,7 +1,6 @@
 # from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
 import os
 from dataclasses import dataclass, field
-from typing import NamedTuple
 
 TEMP_DIR = "./temp"
 TEMP_MODEL_REPO_DIR = f"{TEMP_DIR}/model_repository"
