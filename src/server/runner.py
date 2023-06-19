@@ -1,14 +1,16 @@
-import numpy as np
-from client.base import DatasetAlias, DatasetGen
-from server.util import append_to_csv
-from server.exporter import ModelExporter
-from server.config import ExperimentSpec, Input, TEMP_DIR
-from server.triton import TritonConfig, TritonServer, TritonServerSpec
-from client.triton_client import TritonClient
-from client.runner import RunnerConfig, Runner
 import logging
 import os
 from datetime import datetime
+
+import numpy as np
+
+from client.base import DatasetAlias, DatasetGen
+from client.runner import Runner, RunnerConfig
+from client.triton_client import TritonClient
+from server.config import TEMP_DIR, ExperimentSpec, Input
+from server.exporter import ModelExporter
+from server.triton import TritonConfig, TritonServer, TritonServerSpec
+from server.util import append_to_csv
 
 LOG = logging.getLogger(__name__)
 

@@ -5,16 +5,21 @@
 
 # from typing import Any
 
-from threading import Thread
-import threading
-from server.config import ModelInfo
-from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType, ModelInstanceGroup
-from types import MappingProxyType
-from server.util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, print_container_logs
-import os, logging
+import logging
 import multiprocessing
-from server.config import ExperimentSpec
+import os
+import threading
 from dataclasses import dataclass
+from threading import Thread
+from types import MappingProxyType
+
+from tritonclient.grpc.model_config_pb2 import (DataType, ModelConfig,
+                                                ModelInput, ModelInstanceGroup,
+                                                ModelOutput)
+
+from server.config import ExperimentSpec, ModelInfo
+from server.util import (ENV_TRITON_SERVER_DOCKER, PRINT_HEADER,
+                         print_container_logs)
 
 # multiprocessing.set_start_method('spawn')
 
@@ -58,8 +63,9 @@ class TritonConfig:
         self.experiment = experiment
 
     def create_model_repo(self, max_batch_size=1):
-        from google.protobuf import text_format
         import shutil
+
+        from google.protobuf import text_format
 
         LOG.info(PRINT_HEADER % "CTREATE TRITON MODEL CONFIG")
         if not self.model_repo:

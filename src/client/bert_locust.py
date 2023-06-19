@@ -1,6 +1,6 @@
+from client.base import DatasetIterator, UserContext
+from client.bert import DATASET_NAME, MODEL_NAME, MODEL_VERSION, BertDataset
 from client.triton_user import TritonUser
-from client.base import UserContext, DatasetIterator
-from client.bert import BertDataset, DATASET_NAME, MODEL_NAME, MODEL_VERSION
 
 
 class BertUser(TritonUser):

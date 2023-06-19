@@ -1,9 +1,11 @@
 # This file contains re-usable code and utility classes for the client
-import threading
 import logging
+import threading
 from typing import Union
-from datasets import DatasetDict, Dataset, IterableDatasetDict, IterableDataset
+
 import numpy as np
+from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict
+
 from server.config import Input
 
 LOG = logging.getLogger(__name__)

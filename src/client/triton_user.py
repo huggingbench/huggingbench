@@ -1,8 +1,9 @@
 import logging
 import time
-from locust import User, task
+
 from base import UserContext
-from triton_client import TritonClient, TRITON_SERVER
+from locust import User, task
+from triton_client import TRITON_SERVER, TritonClient
 
 LOG = logging.getLogger(__name__)
 

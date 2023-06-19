@@ -1,11 +1,14 @@
 import logging
 import queue
-from threading import Thread, Event, Lock
-from concurrent.futures import Future, ThreadPoolExecutor, CancelledError, TimeoutError, as_completed
+from concurrent.futures import (CancelledError, Future, ThreadPoolExecutor,
+                                TimeoutError, as_completed)
+from threading import Event, Lock, Thread
+from timeit import default_timer as timer
+
+from tritonclient.http import InferenceServerException
+
 from client.base import DatasetAlias, DatasetIterator
 from client.triton_client import TritonClient
-from timeit import default_timer as timer
-from tritonclient.http import InferenceServerException
 
 LOG = logging.getLogger(__name__)
 

@@ -1,7 +1,9 @@
 # Description: This file contains the code for the BERT model.
 import logging
+
 from datasets import load_dataset
 from transformers import AutoTokenizer
+
 from client.base import BaseDataset, DatasetGen
 from server.config import Input
 

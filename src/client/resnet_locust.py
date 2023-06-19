@@ -1,6 +1,6 @@
-from base import UserContext, DatasetIterator
+from base import DatasetIterator, UserContext
+from resnet import DATASET_NAME, MODEL_NAME, MODEL_VERSION, ResnetDataset
 from triton_user import TritonUser
-from resnet import ResnetDataset, DATASET_NAME, MODEL_NAME, MODEL_VERSION
 
 
 class ResnetUser(TritonUser):

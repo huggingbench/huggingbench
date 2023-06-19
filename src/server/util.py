@@ -7,7 +7,8 @@ from threading import Thread
 from typing import Dict, NamedTuple
 
 import onnx
-from polygraphy.backend.onnx.util import get_input_metadata, get_output_metadata
+from polygraphy.backend.onnx.util import (get_input_metadata,
+                                          get_output_metadata)
 
 from server.config import Input, Output
 
