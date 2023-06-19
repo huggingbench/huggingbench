@@ -13,11 +13,19 @@ from types import MappingProxyType
 from server.util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, print_container_logs
 import os, logging
 import multiprocessing
-from server.config import TritonServerSpec, ExperimentSpec
+from server.config import ExperimentSpec
+from dataclasses import dataclass
 
 # multiprocessing.set_start_method('spawn')
 
 LOG = logging.getLogger(__name__)
+
+
+@dataclass
+class TritonServerSpec:
+    grpc_port: int = 8001
+    http_port: int = 8000
+    model_repository_dir: str = "./temp/model_repository"
 
 
 class TritonConfig:

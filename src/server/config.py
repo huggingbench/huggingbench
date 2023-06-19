@@ -8,13 +8,6 @@ TEMP_MODEL_REPO_DIR = f"{TEMP_DIR}/model_repository"
 
 
 @dataclass
-class TritonServerSpec:
-    grpc_port: int = 8001
-    http_port: int = 8000
-    model_repository_dir: str = TEMP_MODEL_REPO_DIR
-
-
-@dataclass
 class ExperimentSpec:
     hf_id: str
     format: str

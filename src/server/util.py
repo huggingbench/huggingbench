@@ -18,7 +18,7 @@ LOG = logging.getLogger(__name__)
 
 
 def dtype_np_type(dtype: str):
-    from hugging_bench_triton import TritonConfig
+    from triton import TritonConfig
     from tritonclient.utils import triton_to_np_dtype
 
     return triton_to_np_dtype(TritonConfig.DTYPE_MAP.get(dtype, None))
