@@ -1,12 +1,10 @@
 import json
 import logging
-from types import FunctionType
 from typing import List
 
 import numpy as np
 import tritonclient.http as httpclient
-from prometheus_client import (REGISTRY, Counter, Histogram, Info,
-                               start_http_server, write_to_textfile)
+from prometheus_client import REGISTRY, Counter, Histogram, Info, start_http_server, write_to_textfile
 from tritonclient.http import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype
 
