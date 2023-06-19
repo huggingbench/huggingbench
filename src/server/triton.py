@@ -12,13 +12,10 @@ from dataclasses import dataclass
 from threading import Thread
 from types import MappingProxyType
 
-from tritonclient.grpc.model_config_pb2 import (DataType, ModelConfig,
-                                                ModelInput, ModelInstanceGroup,
-                                                ModelOutput)
+from tritonclient.grpc.model_config_pb2 import DataType, ModelConfig, ModelInput, ModelInstanceGroup, ModelOutput
 
 from server.config import ExperimentSpec, ModelInfo
-from server.util import (ENV_TRITON_SERVER_DOCKER, PRINT_HEADER,
-                         print_container_logs)
+from server.util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, print_container_logs
 
 # multiprocessing.set_start_method('spawn')
 
