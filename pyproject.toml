@@ -29,6 +29,12 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
+dev = [
+  'black',
+  'isort',
+  'autoflake',
+]
+
 tests = [
   'pytest==7.3.2',
 ]
