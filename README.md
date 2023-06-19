@@ -23,6 +23,7 @@ python3 -m pip install -e . --extra-index-url https://pypi.ngc.nvidia.com
 ```
 
 ```
+black .
 isort test src
 autoflake --in-place --remove-unused-variables --recursive src test
 ```
@@ -35,12 +36,10 @@ run
 `runbench --format onnx --hf_ids "bert-base-uncased" "distilbert-base-uncased" "microsoft/resnet-5"`
 
 ```
-runbench --help
-usage: runbench [-h] [--format [{onnx,trt,openvino} ...]] [--device [{cpu,cuda} ...]] [--half [HALF ...]] [--client_worker [CLIENT_WORKER ...]]
-                [--hf_ids [HF_IDS ...]] [--model_local_path [MODEL_LOCAL_PATH ...]] [--task [TASK ...]] [--batch_size [BATCH_SIZE ...]]
-                [--instance_count INSTANCE_COUNT] [--async_client ASYNC_CLIENT]
-
-runbench options
+python3 src/bench/cli.py run -h
+usage: cli.py run [-h] [--format [{onnx,trt,openvino} ...]] [--device [{cpu,cuda} ...]] [--half [HALF ...]] [--client_worker [CLIENT_WORKER ...]] [--hf_ids [HF_IDS ...]]
+                  [--model_local_path [MODEL_LOCAL_PATH ...]] [--task [TASK ...]] [--batch_size [BATCH_SIZE ...]] [--instance_count INSTANCE_COUNT]
+                  [--async_client ASYNC_CLIENT]
 
 options:
   -h, --help            show this help message and exit

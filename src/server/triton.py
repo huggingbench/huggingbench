@@ -12,7 +12,13 @@ from dataclasses import dataclass
 from threading import Thread
 from types import MappingProxyType
 
-from tritonclient.grpc.model_config_pb2 import DataType, ModelConfig, ModelInput, ModelInstanceGroup, ModelOutput
+from tritonclient.grpc.model_config_pb2 import (
+    DataType,
+    ModelConfig,
+    ModelInput,
+    ModelInstanceGroup,
+    ModelOutput,
+)
 
 from bench.config import ExperimentSpec, ModelInfo
 from server.util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, print_container_logs
@@ -115,8 +121,6 @@ class TritonConfig:
                 backend=self.BACKEND_MAP.get(self.model_info.format.format_type),
                 instance_group=self._instance_group(),
             )
-
-            from tritonclient.grpc.model_config_pb2 import ModelParameter
 
             p1 = model_config.parameters["RESHAPE_IO_LAYERS"]
             p1.string_value = "YES"

@@ -4,6 +4,7 @@ monkey.patch_all()  # this is needed to make gevent work with Threads
 import argparse
 import logging
 
+from bench.chart import plot_charts
 from bench.config import ExperimentSpec
 from bench.runner import ExperimentRunner
 from server.triton import TritonServerSpec
@@ -11,43 +12,57 @@ from server.triton import TritonServerSpec
 LOG = logging.getLogger("CLI")
 
 
-def mlperf():
+def hbench():
     # Create the argument parser
-    parser = argparse.ArgumentParser(description="runbench options")
+    parser = argparse.ArgumentParser(description="HuggingBench CLI")
+    subparsers = parser.add_subparsers()
 
+    # 'run' command
+    run_parser = subparsers.add_parser("run")
     # Define the command-line arguments with their default values
-    parser.add_argument("--format", default=["onnx"], nargs="*", choices=["onnx", "trt", "openvino"])
-    parser.add_argument("--device", default=["cpu"], nargs="*", choices=["cpu", "cuda"])
-    parser.add_argument("--half", default=[False], nargs="*", type=bool, help="Whether to use half precision")
-    parser.add_argument(
+    run_parser.add_argument("--format", default=["onnx"], nargs="*", choices=["onnx", "trt", "openvino"])
+    run_parser.add_argument("--device", default=["cpu"], nargs="*", choices=["cpu", "cuda"])
+    run_parser.add_argument("--half", default=[False], nargs="*", type=bool, help="Whether to use half precision")
+    run_parser.add_argument(
         "--client_worker",
         default=[1],
         nargs="*",
         type=int,
         help="Number of client workers sending concurrent requests to Triton",
     )
-    parser.add_argument(
+    run_parser.add_argument(
         "--hf_ids", default=["prajjwal1/bert-tiny"], nargs="*", help="HuggingFace model ID(s) to benchmark"
     )
-    parser.add_argument(
+    run_parser.add_argument(
         "--model_local_path",
         default=None,
         nargs="*",
         help="If not specified, will download from HuggingFace. When given a task name must also be specified.",
     )
-    parser.add_argument(
+    run_parser.add_argument(
         "--task", default=None, nargs="*", help="Model task(s) to benchmark. Used with --model_local_path"
     )
-    parser.add_argument("--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference..")
-    parser.add_argument("--instance_count", default=1, type=int, help="Triton server instance count.")
-    parser.add_argument("--async_client", default=False, type=bool, help="Use async triton client.")
+    run_parser.add_argument("--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference..")
+    run_parser.add_argument("--instance_count", default=1, type=int, help="Triton server instance count.")
+    run_parser.add_argument("--async_client", default=False, type=bool, help="Use async triton client.")
+    run_parser.set_defaults(func=run_command)
 
-    #  potential hf_ids: ["bert-base-uncased", "distilbert-base-uncased", "microsoft/resnet-5"]
+    # 'chart' command
+    chart_parser = subparsers.add_parser("chart")
+    chart_parser.add_argument(
+        "--input", help="Specify the input file containing result of benchmarking.", required=True
+    )
+    chart_parser.set_defaults(func=chart_command)
 
-    # Parse the command-line arguments
     args = parser.parse_args()
 
-    # Store the arguments in variables of the same name
+    if hasattr(args, "func"):
+        args.func(args)
+    else:
+        parser.print_help()
+
+
+def run_command(args):
     format_types = args.format
     devices = args.device
     half = args.half
@@ -91,6 +106,10 @@ def mlperf():
         ).run()
 
 
+def chart_command(args):
+    plot_charts(args.input)
+
+
 ## run mlperf by default
 if __name__ == "__main__":
-    mlperf()
+    hbench()

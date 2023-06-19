@@ -4,8 +4,8 @@ import logging
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from client.base import BaseDataset, DatasetGen
 from bench.config import Input
+from client.base import BaseDataset, DatasetGen
 
 MODEL_NAME = "bert-base-uncased"
 MODEL_VERSION = "1"

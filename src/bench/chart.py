@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
+def plot_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
     df = pd.read_csv(stats_path)
 
     # Extract required columns
@@ -125,4 +125,4 @@ def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
 
 
 if __name__ == "__main__":
-    create_charts()
+    plot_charts()

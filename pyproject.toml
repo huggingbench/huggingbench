@@ -40,7 +40,7 @@ tests = [
 ]
 
 [project.scripts]
-runbench = "server.main:mlperf"
+hbench = "bench.cli:hbench"
 
 [tool.setuptools.packages.find]
 where = ["src"]

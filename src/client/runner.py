@@ -1,6 +1,12 @@
 import logging
 import queue
-from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, TimeoutError, as_completed
+from concurrent.futures import (
+    CancelledError,
+    Future,
+    ThreadPoolExecutor,
+    TimeoutError,
+    as_completed,
+)
 from threading import Event, Lock, Thread
 from timeit import default_timer as timer
 

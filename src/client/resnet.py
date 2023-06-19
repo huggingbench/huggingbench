@@ -5,8 +5,8 @@ from torchvision import transforms
 from transformers import AutoConfig
 from transformers.models.resnet.configuration_resnet import ResNetOnnxConfig
 
-from client.base import BaseDataset, DatasetGen
 from bench.config import Input
+from client.base import BaseDataset, DatasetGen
 
 MODEL_NAME = "microsoft/resnet-50"
 MODEL_VERSION = "1"

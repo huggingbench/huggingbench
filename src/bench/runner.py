@@ -4,10 +4,10 @@ from datetime import datetime
 
 import numpy as np
 
+from bench.config import TEMP_DIR, ExperimentSpec, Input
 from client.base import DatasetAlias, DatasetGen
 from client.runner import Runner, RunnerConfig
 from client.triton_client import TritonClient
-from bench.config import TEMP_DIR, ExperimentSpec, Input
 from server.exporter import ModelExporter
 from server.triton import TritonConfig, TritonServer, TritonServerSpec
 from server.util import append_to_csv
