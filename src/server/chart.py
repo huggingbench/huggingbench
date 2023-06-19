@@ -1,5 +1,5 @@
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def create_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):

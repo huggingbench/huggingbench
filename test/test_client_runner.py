@@ -1,6 +1,7 @@
-from client.runner import Runner, RunnerConfig
 import unittest
 from unittest.mock import MagicMock
+
+from client.runner import Runner, RunnerConfig
 
 
 class RunnerTestCase(unittest.TestCase):

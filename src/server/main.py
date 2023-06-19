@@ -1,11 +1,12 @@
 from gevent import monkey
 
 monkey.patch_all()  # this is needed to make gevent work with Threads
-from server.config import ExperimentSpec
-from server.triton import TritonServerSpec
-from server.runner import ExperimentRunner
 import argparse
 import logging
+
+from server.config import ExperimentSpec
+from server.runner import ExperimentRunner
+from server.triton import TritonServerSpec
 
 LOG = logging.getLogger("CLI")
 

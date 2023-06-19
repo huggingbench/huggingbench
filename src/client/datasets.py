@@ -1,6 +1,6 @@
+from client.base import DatasetAlias
 from client.bert import BertDataset, BertGenDataset, DistilBertGenDataset
 from client.resnet import ResnetDataset, ResnetGenDataset
-from client.base import DatasetAlias
 
 MODEL_DATASET = {
     "bert-base-uncased": BertDataset,

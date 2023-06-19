@@ -1,11 +1,12 @@
 import logging
+
 from datasets import load_dataset
+from torchvision import transforms
 from transformers import AutoConfig
 from transformers.models.resnet.configuration_resnet import ResNetOnnxConfig
-from torchvision import transforms
+
 from client.base import BaseDataset, DatasetGen
 from server.config import Input
-
 
 MODEL_NAME = "microsoft/resnet-50"
 MODEL_VERSION = "1"
