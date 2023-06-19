@@ -1,5 +1,5 @@
 import pytest
-from hugging_bench.hugging_bench_config import ModelInfo, Format, Input, Output
+from server.config import ModelInfo, Format, Input, Output
 
 
 @pytest.fixture

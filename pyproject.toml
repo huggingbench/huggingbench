@@ -34,11 +34,11 @@ tests = [
 ]
 
 [project.scripts]
-runbench = "hugging_bench.main:mlperf"
+runbench = "server.main:mlperf"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["client", "hugging_bench"]
+include = ["client", "server"]
 namespaces = false
 
 [tool.black]

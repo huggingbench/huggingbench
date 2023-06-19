@@ -1,8 +1,8 @@
 import logging
 import os
 
-from hugging_bench.hugging_bench_config import ExperimentSpec, Format, ModelInfo
-from hugging_bench.hugging_bench_util import PRINT_HEADER, hf_model_input, hf_model_output, run_docker_sdk
+from server.config import ExperimentSpec, Format, ModelInfo
+from server.util import PRINT_HEADER, hf_model_input, hf_model_output, run_docker_sdk
 
 LOG = logging.getLogger(__name__)
 
