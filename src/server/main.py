@@ -1,7 +1,8 @@
 from gevent import monkey
 
 monkey.patch_all()  # this is needed to make gevent work with Threads
-from server.config import ExperimentSpec, TritonServerSpec
+from server.config import ExperimentSpec
+from server.triton import TritonServerSpec
 from server.runner import ExperimentRunner
 import argparse
 import logging
