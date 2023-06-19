@@ -1,6 +1,6 @@
 import pytest
 
-from server.config import Format, Input, ModelInfo, Output
+from bench.config import Format, Input, ModelInfo, Output
 
 
 @pytest.fixture

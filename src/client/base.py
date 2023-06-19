@@ -6,7 +6,7 @@ from typing import Union
 import numpy as np
 from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict
 
-from server.config import Input
+from bench.config import Input
 
 LOG = logging.getLogger(__name__)
 

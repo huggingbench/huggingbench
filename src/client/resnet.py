@@ -6,7 +6,7 @@ from transformers import AutoConfig
 from transformers.models.resnet.configuration_resnet import ResNetOnnxConfig
 
 from client.base import BaseDataset, DatasetGen
-from server.config import Input
+from bench.config import Input
 
 MODEL_NAME = "microsoft/resnet-50"
 MODEL_VERSION = "1"

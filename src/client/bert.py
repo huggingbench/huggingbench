@@ -5,7 +5,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer
 
 from client.base import BaseDataset, DatasetGen
-from server.config import Input
+from bench.config import Input
 
 MODEL_NAME = "bert-base-uncased"
 MODEL_VERSION = "1"

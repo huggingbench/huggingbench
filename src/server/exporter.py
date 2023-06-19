@@ -1,7 +1,7 @@
 import logging
 import os
 
-from server.config import ExperimentSpec, Format, ModelInfo
+from bench.config import ExperimentSpec, Format, ModelInfo
 from server.util import PRINT_HEADER, hf_model_input, hf_model_output, run_docker_sdk
 
 LOG = logging.getLogger(__name__)

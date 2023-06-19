@@ -4,8 +4,8 @@ monkey.patch_all()  # this is needed to make gevent work with pytest
 import os
 from pathlib import Path
 
-from server.config import ExperimentSpec
-from server.runner import ExperimentRunner
+from bench.config import ExperimentSpec
+from bench.runner import ExperimentRunner
 from server.triton import TritonServerSpec
 from server.util import ENV_TRITON_SERVER_DOCKER
 

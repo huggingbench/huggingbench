@@ -8,7 +8,7 @@ from typing import Dict, NamedTuple
 import onnx
 from polygraphy.backend.onnx.util import get_input_metadata, get_output_metadata
 
-from server.config import Input, Output
+from bench.config import Input, Output
 
 PRINT_HEADER = "\n\n============================%s=====================================\n"
 ENV_TRITON_SERVER_DOCKER = "triton_server_docker_image"
