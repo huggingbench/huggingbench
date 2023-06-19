@@ -4,7 +4,7 @@ from transformers import AutoConfig
 from transformers.models.resnet.configuration_resnet import ResNetOnnxConfig
 from torchvision import transforms
 from client.base import BaseDataset, DatasetGen
-from hugging_bench.hugging_bench_config import Input
+from server.config import Input
 
 
 MODEL_NAME = "microsoft/resnet-50"

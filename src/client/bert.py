@@ -3,7 +3,7 @@ import logging
 from datasets import load_dataset
 from transformers import AutoTokenizer
 from client.base import BaseDataset, DatasetGen
-from hugging_bench.hugging_bench_config import Input
+from server.config import Input
 
 MODEL_NAME = "bert-base-uncased"
 MODEL_VERSION = "1"

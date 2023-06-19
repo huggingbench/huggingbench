@@ -4,7 +4,7 @@ import logging
 from typing import Union
 from datasets import DatasetDict, Dataset, IterableDatasetDict, IterableDataset
 import numpy as np
-from hugging_bench.hugging_bench_config import Input
+from server.config import Input
 
 LOG = logging.getLogger(__name__)
 
