@@ -20,6 +20,7 @@ from dataclasses import dataclass
 
 LOG = logging.getLogger(__name__)
 
+
 @dataclass
 class TritonServerSpec:
     grpc_port: int = 8001
