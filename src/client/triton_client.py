@@ -59,7 +59,7 @@ class TritonClient:
         self.outputs = {tm["name"]: tm for tm in model_metadata["outputs"]}
 
         if not TritonClient.prom_started:
-            LOG.info("Starting Prometheus server (for client) on port %s", prom_port)
+            LOG.info("Exposing client metrics on port %s", prom_port)
             start_http_server(prom_port)
             TritonClient.prom_started = True
 
