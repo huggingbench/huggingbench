@@ -9,7 +9,7 @@ from client.base import DatasetAlias, DatasetGen
 from client.runner import Runner, RunnerConfig
 from client.triton_client import TritonClient
 from server.exporter import ModelExporter
-from server.triton import TritonConfig, TritonServer, TritonServerSpec
+from server.triton import TritonConfig, TritonServer
 from server.util import append_to_csv
 
 LOG = logging.getLogger(__name__)
@@ -19,23 +19,22 @@ class ExperimentRunner:
     def __init__(
         self,
         experiments: list[ExperimentSpec],
-        server_spec: TritonServerSpec,
         dataset: DatasetAlias = None,
+        workspace_dir: str = "./temp",
     ) -> None:
         self.dataset = dataset
         self.experiments = experiments
-        self.server_spec = server_spec
-        self.server_spec.model_repository_dir = os.path.abspath(server_spec.model_repository_dir)
+        self.workspace_dir = os.path.abspath(workspace_dir)
 
     def run(self):
         for spec in self.experiments:
             exporter = ModelExporter(spec.hf_id, spec, spec.task, TEMP_DIR)
             model_info = exporter.export(spec.model_local_path)
-            triton_config = TritonConfig(self.server_spec, model_info, spec).create_model_repo(spec.batch_size)
+            triton_config = TritonConfig(model_info, spec, self.workspace_dir).create_model_repo(spec.batch_size)
             triton_server = TritonServer(triton_config)
             triton_server.start()
             triton_client = TritonClient(
-                "localhost:{}".format(self.server_spec.http_port),
+                "localhost:{}".format(triton_config.http_port),
                 model_info.unique_name(),
                 max_paralell_requests=spec.client_workers,
             )

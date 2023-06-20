@@ -8,7 +8,6 @@
 import logging
 import os
 import threading
-from dataclasses import dataclass
 from threading import Thread
 from types import MappingProxyType
 
@@ -26,13 +25,6 @@ from server.util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, print_container_
 # multiprocessing.set_start_method('spawn')
 
 LOG = logging.getLogger(__name__)
-
-
-@dataclass
-class TritonServerSpec:
-    grpc_port: int = 8001
-    http_port: int = 8000
-    model_repository_dir: str = "./temp/model_repository"
 
 
 class TritonConfig:
@@ -57,11 +49,15 @@ class TritonConfig:
         }
     )
 
-    def __init__(self, server_spec: TritonServerSpec, model_info: ModelInfo, experiment: ExperimentSpec) -> None:
+    GRPC_PORT: int = 8001
+    HTTP_PORT: int = 8000
+    REPOSITORY_DIR: str = "model_repository"
+
+    def __init__(self, model_info: ModelInfo, experiment: ExperimentSpec, workspace_dir: str) -> None:
         self.model_info = model_info
-        self.model_repo = os.path.abspath(server_spec.model_repository_dir)
-        self.grpc_port = server_spec.grpc_port
-        self.http_port = server_spec.http_port
+        self.model_repo = os.path.join(os.path.abspath(workspace_dir), self.REPOSITORY_DIR)
+        self.grpc_port = self.GRPC_PORT
+        self.http_port = self.HTTP_PORT
         self.experiment = experiment
 
     def create_model_repo(self, max_batch_size=1):
