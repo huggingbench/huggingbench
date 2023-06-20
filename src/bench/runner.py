@@ -70,7 +70,7 @@ class ExperimentRunner:
             "99_percentile": percentile_99,
             "experiment_id": experiment_id,
         }
-        output_file = spec.get_csv_output_path()
+        output_file = spec.get_csv_output_path(self.workspace_dir)
         append_to_csv(vars(spec), res_dict, output_file)
 
     def _dataset_or_default(self, input_metadata):
