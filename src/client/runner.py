@@ -26,6 +26,10 @@ class RunnerConfig:
 
 
 class Runner:
+    """Runner is responsible for sending requests to the server using
+    inference client and collecting the results.
+    It manages client concurrency and async behavior."""
+
     def __init__(self, cfg: RunnerConfig, client: TritonClient, dataset: DatasetAlias) -> None:
         self.config = cfg
         self.client = client

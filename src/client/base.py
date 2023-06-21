@@ -10,7 +10,7 @@ from bench.config import Input
 
 LOG = logging.getLogger(__name__)
 
-
+# Type alias for HF datasets
 DatasetAlias = Union[DatasetDict, Dataset, IterableDatasetDict, IterableDataset]
 
 
@@ -51,17 +51,8 @@ class DatasetIterator:
             return len(self.dataset)
 
 
-class UserContext:
-    def __init__(self, inf_dataset: DatasetIterator, model_name: str, model_version: str, batch_size: int = 1):
-        LOG.info("Loaded dataset with %d samples", len(inf_dataset))
-        self.dataset = inf_dataset
-        self.model_name = model_name
-        self.model_version = model_version
-        self.batch_size = batch_size
-
-
 class DatasetGen(BaseDataset):
-    """Generates a dataset of random tensors."""
+    """Generates a dataset of random tensors for given Input specs"""
 
     TYPE_MAP = {
         "INT64": np.int64,

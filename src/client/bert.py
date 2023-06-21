@@ -22,7 +22,7 @@ class BertDataset(BaseDataset):
         self.dataset_name = dataset
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         max_sequence_length = getattr(tokenizer, "model_max_length", None)
-        dataset = load_dataset(self.dataset_name, split="train")
+        dataset = load_dataset(self.dataset_name, split="validation")
 
         def preprocess_function(dataset):
             ### Tokenize contexts and questions (as pairs of inputs)
@@ -42,7 +42,7 @@ class BertDataset(BaseDataset):
 
 
 class BertGenDataset(DatasetGen):
-    """Dataset with random tensors"""
+    """Bert data with random tensors"""
 
     inputs = [
         Input(name="input_ids", dtype="INT64", dims=[512]),
@@ -55,7 +55,7 @@ class BertGenDataset(DatasetGen):
 
 
 class DistilBertGenDataset(DatasetGen):
-    """Dataset with random tensors"""
+    """DistilBert data with random tensors"""
 
     inputs = [
         Input(name="input_ids", dtype="INT64", dims=[512]),

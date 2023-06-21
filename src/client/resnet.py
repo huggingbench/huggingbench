@@ -36,7 +36,7 @@ class ResnetDataset(BaseDataset):
 
 
 class ResnetGenDataset(DatasetGen):
-    """Dataset with random tensors"""
+    """Resnet data with random tensors"""
 
     inputs = [Input(name="pixel_values", dtype="FP32", dims=[3, 224, 224])]
 

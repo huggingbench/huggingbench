@@ -4,7 +4,7 @@ from datetime import datetime
 
 import numpy as np
 
-from bench.config import TEMP_DIR, ExperimentSpec, Input
+from bench.config import ExperimentSpec, Input
 from client.base import DatasetAlias, DatasetGen
 from client.runner import Runner, RunnerConfig
 from client.triton_client import TritonClient

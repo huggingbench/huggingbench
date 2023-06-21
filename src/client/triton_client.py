@@ -21,6 +21,7 @@ LOG = logging.getLogger(__file__)
 TRITON_SERVER = "localhost:8000"
 MODEL_VERSION = "1"
 PROM_PORT = 8011  # Prometheus port
+INPUT_KEY_DATATYPE = "datatype"
 
 
 class TritonClient:
@@ -39,6 +40,9 @@ class TritonClient:
     prom_started = False
 
     def __init__(self, triton_url: str, model_name: str, max_paralell_requests: int = 10, prom_port: int = PROM_PORT):
+        if triton_url is None:
+            LOG.warning("Triton URL not provided. Running client in test mode")
+            return
         self._server_url = triton_url
         # we can't have "/" in the model file path
         self.model = model_name
@@ -73,30 +77,8 @@ class TritonClient:
 
     def _infer_batch(self, samples, async_req: bool = False):
         """Runs inference on the triton server"""
-        infer_inputs = []
-        infer_outputs = []
-        batched_data_per_input = {}
-        for sample in samples:
-            for input in self.inputs:
-                data_type = self.inputs[input]["datatype"]
-                np_dtype = triton_to_np_dtype(data_type)
-                data = sample[input].astype(np_dtype)
-                if input not in batched_data_per_input:
-                    batched_data_per_input[input] = []
-                batched_data_per_input[input].append(data)
-                LOG.debug("Input: %s, shape: %s", input, data.shape)
-        stacked_batched_data_per_input = {}
-        for input in batched_data_per_input:
-            stacked_batched_data_per_input[input] = np.stack(batched_data_per_input[input], 0)
-        for stacked_input in stacked_batched_data_per_input:
-            infer_input = httpclient.InferInput(
-                stacked_input,
-                stacked_batched_data_per_input[stacked_input].shape,
-                self.inputs[stacked_input]["datatype"],
-            )
-            infer_input.set_data_from_numpy(stacked_batched_data_per_input[stacked_input])
-            infer_inputs.append(infer_input)
-        infer_outputs = self._prepare_infer_outputs()
+        infer_inputs = self._prepare_infer_inputs(samples)
+        infer_outputs = self._prepare_infer_outputs(self.outputs)
         with self.metric_infer_latency.labels(self.model, len(samples)).time():
             if async_req:
                 return self._infer_with_metrics(
@@ -134,51 +116,39 @@ class TritonClient:
     def infer_batch_async(self, samples) -> httpclient.InferAsyncRequest:
         return self._infer_batch(samples, async_req=True)
 
-    def _prepare_infer_inputs(self, sample) -> List[httpclient.InferInput]:
+    def _prepare_infer_inputs(self, samples) -> List[httpclient.InferInput]:
         """Prepares the input for inference"""
+        """We batch the data per input and stack it"""
         infer_inputs = []
-        for input in self.inputs:
-            data_type = self.inputs[input]["datatype"]
-            np_dtype = triton_to_np_dtype(data_type)
-            data = sample[input].astype(np_dtype)
-            # adding batch dimension
-            data = np.expand_dims(data, axis=0)
-            infer_input = httpclient.InferInput(input, data.shape, data_type)
-            infer_input.set_data_from_numpy(data)
+        batched_data_per_input = {}
+        for sample in samples:
+            for input in self.inputs:
+                data_type = self.inputs[input][INPUT_KEY_DATATYPE]
+                np_dtype = triton_to_np_dtype(data_type)
+                data = sample[input].astype(np_dtype)
+                if input not in batched_data_per_input:
+                    batched_data_per_input[input] = []
+                batched_data_per_input[input].append(data)
+                LOG.debug("Input: %s, shape: %s", input, data.shape)
+        stacked_batched_data_per_input = {}
+        for input in batched_data_per_input:
+            stacked_batched_data_per_input[input] = np.stack(batched_data_per_input[input], 0)
+        for stacked_input in stacked_batched_data_per_input:
+            infer_input = httpclient.InferInput(
+                stacked_input,
+                stacked_batched_data_per_input[stacked_input].shape,
+                self.inputs[stacked_input][INPUT_KEY_DATATYPE],
+            )
+            infer_input.set_data_from_numpy(stacked_batched_data_per_input[stacked_input])
             infer_inputs.append(infer_input)
         return infer_inputs
 
-    def _prepare_infer_outputs(self) -> List[httpclient.InferRequestedOutput]:
+    def _prepare_infer_outputs(self, output_names) -> List[httpclient.InferRequestedOutput]:
         """Prepares the output for inference"""
         infer_outputs = []
-        for output in self.outputs:
+        for output in output_names:
             infer_outputs.append(httpclient.InferRequestedOutput(output))
         return infer_outputs
-
-    def infer_req(self, sample) -> httpclient.InferResult:
-        infer_inputs = self._prepare_infer_inputs(sample)
-        infer_outputs = self._prepare_infer_outputs()
-        with self.metric_infer_latency.labels(self.model).time():
-            infer_res: httpclient.InferResult = self.client.infer(
-                model_name=self.model, model_version=self.model_version, inputs=infer_inputs, outputs=infer_outputs
-            )
-            return infer_res
-
-    def infer_req_async(self, sample) -> httpclient.InferAsyncRequest:
-        infer_inputs = self._prepare_infer_inputs(sample)
-        infer_outputs = self._prepare_infer_outputs(sample)
-        return self.client.async_infer(
-            model_name=self.model, model_version=self.model_version, inputs=infer_inputs, outputs=infer_outputs
-        )
-
-    def process_async_requests(
-        self, async_requests: List[httpclient.InferAsyncRequest]
-    ) -> List[httpclient.InferResult]:
-        """Processes the async requests and returns the results"""
-        results = []
-        for async_req in async_requests:
-            results.append(async_req.get_result())
-        return results
 
     def _server_check(self, client):
         errors = []
