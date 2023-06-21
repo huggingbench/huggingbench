@@ -3,7 +3,7 @@ import logging
 import os
 from dataclasses import replace
 from threading import Thread
-from typing import Dict, NamedTuple
+from typing import Dict
 
 import onnx
 from polygraphy.backend.onnx.util import get_input_metadata, get_output_metadata
@@ -14,13 +14,6 @@ PRINT_HEADER = "\n\n============================%s==============================
 ENV_TRITON_SERVER_DOCKER = "triton_server_docker_image"
 
 LOG = logging.getLogger(__name__)
-
-
-def dtype_np_type(dtype: str):
-    from triton import TritonConfig
-    from tritonclient.utils import triton_to_np_dtype
-
-    return triton_to_np_dtype(TritonConfig.DTYPE_MAP.get(dtype, None))
 
 
 def print_container_logs(container, callback=None):
@@ -136,12 +129,6 @@ def format_dtype(dtype):
         return "FP16"
     else:
         return dtype
-
-
-class ExperimentSpec(NamedTuple):
-    format: str
-    device: str
-    half: bool
 
 
 def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):

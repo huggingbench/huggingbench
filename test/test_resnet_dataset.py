@@ -8,7 +8,7 @@ class TestResnet(unittest.TestCase):
 
     def test_resnet_load(self):
         resnet = ResnetDataset()
-        self.assertTrue(len(resnet.get_dataset()) == 1)  # only one cat image :)
+        self.assertTrue(len(resnet.get_dataset()) > 0)
         sample = resnet.get_dataset()[0]
         for input in ResnetGenDataset.inputs:
             self.assertIsNotNone(sample[input.name])

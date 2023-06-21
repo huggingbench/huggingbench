@@ -10,7 +10,7 @@ from client.base import BaseDataset, DatasetGen
 
 MODEL_NAME = "microsoft/resnet-50"
 MODEL_VERSION = "1"
-DATASET_NAME = "huggingface/cats-image"
+DATASET_NAME = "beans"
 DATASET_COLUMN_NAME = "image"
 
 log = logging.getLogger(__name__)
