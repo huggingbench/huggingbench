@@ -55,7 +55,7 @@ class ModelExporter:
             base_dir=self.base_dir,
         )
 
-        if os.path.exists(onnx_model_info.model_dir()):
+        if os.path.exists(onnx_model_info.model_file_path()):
             LOG.info(f"Model already exists at {onnx_model_info.model_file_path()}")
             return onnx_model_info
 

@@ -1,128 +1,73 @@
+import logging
+import os
 import matplotlib.pyplot as plt
 import pandas as pd
+from bench.config import get_os_friendly_path
+
+LOG = logging.getLogger(__name__)
 
 
-def plot_charts(stats_path="temp/prajjwal1-bert-tiny.csv"):
-    df = pd.read_csv(stats_path)
-
-    # Extract required columns
-    labels = df[
-        ["format", "device", "half", "batch_size", "sequence_length", "client_workers", "async_client", "success_rate"]
-    ]
-    median_latencies = df["median"]
-    percentile90_latencies = df["90_percentile"]
-    percentile99_latencies = df["99_percentile"]
-    throughputs = df["success_rate"]
-
-    # Set the figure size
-    fig1, ax1 = plt.subplots(figsize=(12, 6))
-    fig2, ax2 = plt.subplots(figsize=(12, 6))
-    fig3, ax3 = plt.subplots(figsize=(12, 6))
-    fig4, ax4 = plt.subplots(figsize=(12, 6))
-
+class ChartGen:
     # Define colors based on format
     colors = {"onnx": "blue", "trt": "green", "openvino": "red"}
 
-    # Create the chart for median latencies
-    x_ticks = range(len(median_latencies))
-    ax1.bar(x_ticks, median_latencies, color=[colors.get(format_val, "gray") for format_val in labels["format"]])
-    ax1.set_xticks(x_ticks)
-    ax1.set_xticklabels([])  # Remove x-axis labels
+    def __init__(self, workspace_dir: str):
+        self.output_dir = workspace_dir
 
-    # Add x-axis labels inside the bars
-    for i, label in enumerate(labels.values):
-        success_rate = "{:.2f}".format(label[7])
-        ax1.text(
-            i,
-            median_latencies[i],
-            f"{label[0]}\n{label[1]}\nhalf={label[2]}\nbatch={label[3]}\nseq={label[4]}\ncli={label[5]}\nasync={label[6]}\nsucc-rate={success_rate}",
-            ha="center",
-            va="bottom",
-            fontsize=8,
-        )
+    def plot_chart(self, hf_id, labels, chart_data, chart_name):
+        # Set the figure size
+        fig, ax = plt.subplots(figsize=(12, 6))
 
-    ax1.set_xlabel("Configuration")
-    ax1.set_ylabel("Median Latency")
-    ax1.set_title("Comparison of Median Latencies", loc="left")
+        x_ticks = range(len(chart_data))
+        ax.bar(x_ticks, chart_data, color=[self.colors.get(format_val, "gray") for format_val in labels["format"]])
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels([])
+        ax.set_xlabel("Configuration")
+        ax.set_ylabel(chart_name)
+        ax.set_title(f"Comparison of {chart_name}", loc="left")
 
-    # Create the chart for 90th percentiles
-    ax2.bar(x_ticks, percentile90_latencies, color=[colors.get(format_val, "gray") for format_val in labels["format"]])
-    ax2.set_xticks(x_ticks)
-    ax2.set_xticklabels([])  # Remove x-axis labels
+        for i, label in enumerate(labels.values):
+            success_rate = "{:.2f}".format(label[6])
+            ax.text(
+                i,
+                chart_data[i],
+                f"{label[0]}\n{label[1]}\nhalf={label[2]}\nbatch={label[3]}\ncli={label[5]}\nasync={label[6]}\nsucc-rate={success_rate}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
+            )
 
-    # Add x-axis labels inside the bars
-    for i, label in enumerate(labels.values):
-        success_rate = "{:.2f}".format(label[7])
-        ax2.text(
-            i,
-            percentile90_latencies[i],
-            f"{label[0]}\n{label[1]}\nhalf={label[2]}\nbatch={label[3]}\nseq={label[4]}\ncli={label[5]}\nasync={label[6]}\nsucc-rate={success_rate}",
-            ha="center",
-            va="bottom",
-            fontsize=8,
-        )
+        # Adjust spacing between subplots and ensure labels fit
+        plt.tight_layout()
+        hf_id_str = get_os_friendly_path(hf_id)
 
-    ax2.set_xlabel("Configuration")
-    ax2.set_ylabel("90th Percentile Latency")
-    ax2.set_title("Comparison of 90th Percentile Latencies", loc="left")
+        chart_abs_path = os.path.abspath(f"{self.output_dir}/{hf_id_str}-{chart_name}.png")
+        fig.savefig(chart_abs_path)
+        LOG.info(f"Saved chart '{chart_abs_path}'")
+        plt.close(fig)
 
-    # Create the chart for 99th percentiles
-    ax3.bar(x_ticks, percentile99_latencies, color=[colors.get(format_val, "gray") for format_val in labels["format"]])
-    ax3.set_xticks(x_ticks)
-    ax3.set_xticklabels([])  # Remove x-axis labels
+    def plot_charts(self, hf_id: str):
+        os_hf_id = get_os_friendly_path(hf_id)
+        input_csv = os.path.join(self.output_dir, f"{os_hf_id}.csv")
+        df = pd.read_csv(input_csv)
 
-    # Add x-axis labels inside the bars
-    for i, label in enumerate(labels.values):
-        success_rate = "{:.2f}".format(label[7])
-        ax3.text(
-            i,
-            percentile99_latencies[i],
-            f"{label[0]}\n{label[1]}\nhalf={label[2]}\nbatch={label[3]}\nseq={label[4]}\ncli={label[5]}\nasync={label[6]}\nsucc-rate={success_rate}",
-            ha="center",
-            va="bottom",
-            fontsize=8,
-        )
+        # Extract required columns
+        labels = df[["format", "device", "half", "batch_size", "client_workers", "async_client", "success_rate"]]
+        median_latencies = df["median"]
+        percentile90_latencies = df["90_percentile"]
+        percentile99_latencies = df["99_percentile"]
+        throughputs = df["success_rate"]
 
-    ax3.set_xlabel("Configuration")
-    ax3.set_ylabel("99th Percentile Latency")
-    ax3.set_title("Comparison of 99th Percentile Latencies", loc="left")
+        charts = {
+            "median_latencies": median_latencies,
+            "90_percentile_latencies": percentile90_latencies,
+            "99_percentile_latencies": percentile99_latencies,
+            "throughputs": throughputs,
+        }
 
-    # Create the chart for throughput
-    ax4.bar(x_ticks, throughputs, color=[colors.get(format_val, "gray") for format_val in labels["format"]])
-    ax4.set_xticks(x_ticks)
-    ax4.set_xticklabels([])  # Remove x-axis labels
-
-    # Add x-axis labels inside the bars
-    for i, label in enumerate(labels.values):
-        p99 = "{:.4f}".format(percentile99_latencies[i])
-        ax4.text(
-            i,
-            throughputs[i],
-            f"{label[0]}\n{label[1]}\np99={p99}\nhalf={label[2]}\nbatch={label[3]}\nseq={label[4]}\ncli={label[5]}\nasync={label[6]}",
-            ha="center",
-            va="bottom",
-            fontsize=7,
-        )
-
-    ax4.set_xlabel("Configuration")
-    ax4.set_ylabel("throughput")
-    ax4.set_title("Throughput", loc="left")
-
-    # Adjust spacing between subplots and ensure labels fit
-    plt.tight_layout()
-
-    # Save the charts as PNG files
-    fig1.savefig("median_latencies.png", dpi=300)
-    fig2.savefig("percentile90_latencies.png", dpi=300)
-    fig3.savefig("percentile99_latencies.png", dpi=300)
-    fig4.savefig("throughputs.png", dpi=300)
-
-    # Close the plots
-    plt.close(fig1)
-    plt.close(fig2)
-    plt.close(fig3)
-    plt.close(fig4)
+        for chart_name, chart_data in charts.items():
+            self.plot_chart(hf_id, labels, chart_data, chart_name)
 
 
 if __name__ == "__main__":
-    plot_charts()
+    ChartGen("temp/").plot_charts("prajjwal1/bert-tiny")

@@ -161,6 +161,7 @@ cython_debug/
 
 # Benchmark artifacts
 temp/
+.temp/
 
 .vscode
 .DS_Store

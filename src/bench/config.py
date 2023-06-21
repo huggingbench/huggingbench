@@ -46,7 +46,7 @@ class ExperimentSpec:
         }
 
     def get_csv_output_path(self, base_dir):
-        return os.path.join(base_dir, self.hf_id.replace("/", "-") + ".csv")
+        return os.path.join(base_dir, get_os_friendly_path(self.hf_id) + ".csv")
 
 
 @dataclass
@@ -133,3 +133,7 @@ class ModelInfo:
             "sequence_length": str(self.format.parameters.get("sequence_length", 100)),
             "client_workers": str(self.format.parameters.get("client_workers", 1)),
         }
+
+
+def get_os_friendly_path(hf_id: str):
+    return hf_id.replace("/", "-")

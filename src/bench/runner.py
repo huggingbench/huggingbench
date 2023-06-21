@@ -11,6 +11,7 @@ from client.triton_client import TritonClient
 from server.exporter import ModelExporter
 from server.triton import TritonConfig, TritonServer
 from server.util import append_to_csv
+from bench.chart import ChartGen
 
 LOG = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class ExperimentRunner:
         self.dataset = dataset
         self.experiments = experiments
         self.workspace_dir = os.path.abspath(workspace_dir)
+        self.chart_gen = ChartGen(self.workspace_dir)
 
     def run(self):
         for spec in self.experiments:
@@ -53,6 +55,7 @@ class ExperimentRunner:
                 triton_server.stop()
             if success:
                 self.process_results(spec, exec_times, success_rate)
+                self.chart_gen.plot_charts(spec.hf_id)
 
     def process_results(self, spec: ExperimentSpec, exec_times: list[float], success_rate: float):
         # Calculate percentiles and append to csv
@@ -72,6 +75,7 @@ class ExperimentRunner:
         }
         output_file = spec.get_csv_output_path(self.workspace_dir)
         append_to_csv(vars(spec), res_dict, output_file)
+        return output_file
 
     def _dataset_or_default(self, input_metadata):
         if self.dataset:

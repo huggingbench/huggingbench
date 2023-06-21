@@ -4,10 +4,11 @@ monkey.patch_all()  # this is needed to make gevent work with Threads
 import argparse
 import logging
 
-from bench.chart import plot_charts
+from bench.chart import ChartGen
 from bench.config import ExperimentSpec
 from bench.runner import ExperimentRunner
 
+logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger("CLI")
 
 
@@ -40,14 +41,20 @@ def hbench():
     run_parser.add_argument("--instance_count", default=1, type=int, help="Triton server instance count.")
     run_parser.add_argument("--async_client", default=False, type=bool, help="Use async triton client.")
     run_parser.add_argument(
-        "--workspace", default=".temp/", help="Directory holding experiment results and intermediate files."
+        "--workspace", default="temp/", help="Directory holding experiment results and intermediate files."
     )
     run_parser.set_defaults(func=run_command)
 
     # 'chart' command
     chart_parser = subparsers.add_parser("chart")
     chart_parser.add_argument(
-        "--input", help="Specify the input file containing result of benchmarking.", required=True
+        "--workspace",
+        default="temp/",
+        help="Directory holding experiment results and intermediate files",
+        required=True,
+    )
+    chart_parser.add_argument(
+        "--hf_id", default="prajjwal1/bert-tiny", help="HuggingFace model ID(s) to chart", required=True
     )
     chart_parser.set_defaults(func=chart_command)
 
@@ -104,7 +111,8 @@ def run_command(args):
 
 
 def chart_command(args):
-    plot_charts(args.input)
+    char_gen = ChartGen(args.input)
+    char_gen.plot_charts(args.hf_id)
 
 
 ## run mlperf by default

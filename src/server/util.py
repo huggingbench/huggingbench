@@ -157,8 +157,8 @@ def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
         writer = csv.DictWriter(f, fieldnames=fieldnames)
 
         if not file_exists:
-            LOG.info(f"Writing header to CSV file {fieldnames}")
+            LOG.info(f"Creating new CSV file {fieldnames} and writing header")
             writer.writeheader()  # Write header only once
 
-        LOG.info(f"Writing data to CSV file '{csv_file}': {data}")
         writer.writerow(data)
+        LOG.info(f"CSV data written to '{csv_file}'")
