@@ -1,3 +1,6 @@
+import gevent.monkey
+
+gevent.monkey.patch_all()
 import unittest
 from client.bert import BertDataset, BertGenDataset
 
@@ -5,7 +8,7 @@ from client.bert import BertDataset, BertGenDataset
 class TestBert(unittest.TestCase):
     """Test if we can load Bert Squad dataset"""
 
-    def test_load_dataset(self):
+    def test_load_and_tokenize_dataset(self):
         """Test loading and tokenization of Bert Squad dataset"""
         bert = BertDataset()
 

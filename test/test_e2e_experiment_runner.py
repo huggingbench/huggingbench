@@ -1,7 +1,7 @@
-import os
 from gevent import monkey
 
 monkey.patch_all()  # this is needed to make gevent work with pytest
+import os
 from pathlib import Path
 
 from bench.config import ExperimentSpec
