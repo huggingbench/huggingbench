@@ -122,17 +122,6 @@ class ModelInfo:
     def with_shapes(self, input_shape, output_shape):
         return self.__class__(self.hf_id, self.task, self.format, self.base_dir, input_shape, output_shape)
 
-    def tags(self):
-        return {
-            "hf_id": str(self.hf_id),
-            "task": str(self.task),
-            "format": self.format.format_type,
-            "gpu": str(self.gpu_enabled()),
-            "half": str(self.half()),
-            "batch_size": str(self.format.parameters.get("batch_size", 1)),
-            "sequence_length": str(self.format.parameters.get("sequence_length", 100)),
-            "client_workers": str(self.format.parameters.get("client_workers", 1)),
-        }
 
 
 def get_os_friendly_path(hf_id: str):

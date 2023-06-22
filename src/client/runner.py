@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 import queue
 from concurrent.futures import (
@@ -9,6 +10,7 @@ from concurrent.futures import (
 )
 from threading import Event, Lock, Thread
 from timeit import default_timer as timer
+from typing import List
 
 from tritonclient.http import InferenceServerException
 
@@ -24,6 +26,17 @@ class RunnerConfig:
         self.async_req = async_req
         self.workers = workers
 
+@dataclass
+class RunnerStats:
+    execution_times: List[float]
+    success_rate: float
+    failure_rate: float
+    total: int
+    success_count: int
+
+    def __str__(self) -> str:
+        return f"RunnerStats(execution_times={self.execution_times}, success_rate={self.success_rate}, failure_rate={self.failure_rate}, total={self.total}, success_count={self.success_count})"
+
 
 class Runner:
     """Runner is responsible for sending requests to the server using
@@ -36,7 +49,7 @@ class Runner:
         self.dataset = DatasetIterator(dataset, infinite=False)
         self.execution_times = []
 
-    def run(self):
+    def run(self) -> RunnerStats:
         LOG.info("Starting client runner")
         async_reqs = queue.Queue(maxsize=1000)  # Size picked arbitrarily. Sets limit on number of outstanding requests
         completed = Event()
@@ -134,7 +147,7 @@ class Runner:
             future_result(f)
         LOG.info("Processed all items")
         executor.shutdown(wait=True, cancel_futures=True)
-        LOG.info("Finished client runner")
+        LOG.info("Finished processing all items")
         if fail_counter.value() > 0:
             LOG.warn("Failed %d requests", fail_counter.value())
         completed.set()
@@ -144,7 +157,7 @@ class Runner:
         # Convert execution times to a numpy array
         execution_times = self.execution_times
         self.execution_times = []
-        return execution_times, success_rate, failure_rate, total, success_counter.value()
+        return RunnerStats(execution_times, success_rate, failure_rate, total, success_counter.value())
 
 
 class ThreadSafeCounter:

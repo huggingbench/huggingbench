@@ -1,16 +1,16 @@
 import logging
 import os
-from datetime import datetime
 
 import numpy as np
+import pandas as pd
+from tabulate import tabulate
 
 from bench.config import ExperimentSpec, Input
 from client.base import DatasetAlias, DatasetGen
-from client.runner import Runner, RunnerConfig
+from client.runner import Runner, RunnerConfig, RunnerStats
 from client.triton_client import TritonClient
 from server.exporter import ModelExporter
 from server.triton import TritonConfig, TritonServer
-from server.util import append_to_csv
 from bench.chart import ChartGen
 
 LOG = logging.getLogger(__name__)
@@ -44,38 +44,38 @@ class ExperimentRunner:
             client_runner = Runner(runner_config, triton_client, self._dataset_or_default(triton_client.inputs))
             success = False
             try:
-                exec_times, success_rate, failure_rate, total, success_count = client_runner.run()
-                LOG.info(
-                    f"Total requests: {total} Success count: {success_count} Success rate: {success_rate} Failure rate: {failure_rate}"
-                )
+                stats = client_runner.run()
                 success = True
             except Exception as e:
                 LOG.error(f"Client load generation: {e}", exc_info=True)
             finally:
                 triton_server.stop()
             if success:
-                self.process_results(spec, exec_times, success_rate)
-                self.chart_gen.plot_charts(spec.hf_id)
+                df = self.process_results(spec, stats)
+                self.chart_gen.plot_charts(spec.hf_id, df)
 
-    def process_results(self, spec: ExperimentSpec, exec_times: list[float], success_rate: float):
+    def process_results(self, spec: ExperimentSpec, stats: RunnerStats) -> pd.DataFrame:
         # Calculate percentiles and append to csv
-        exec_times = np.array(exec_times)
+        exec_times = np.array(stats.execution_times)
         median = np.median(exec_times)
+        avg = np.average(exec_times)
         percentile_90 = np.percentile(exec_times, 90)
         percentile_99 = np.percentile(exec_times, 99)
-        current_timestamp = datetime.now()
-        formatted_timestamp = current_timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        experiment_id = formatted_timestamp
         res_dict = {
-            "success_rate": success_rate,
+            "success_rate": stats.success_rate,
+            "avg": avg,
             "median": median,
             "90_percentile": percentile_90,
             "99_percentile": percentile_99,
-            "experiment_id": experiment_id,
         }
+        info = vars(spec)
+        data = {**info, **res_dict}
+        df = pd.DataFrame(data, index=[0])
         output_file = spec.get_csv_output_path(self.workspace_dir)
-        append_to_csv(vars(spec), res_dict, output_file)
-        return output_file
+        print(tabulate(df, headers="keys", tablefmt="psql", showindex="never"))
+        df.to_csv(output_file, mode='a', header=not os.path.exists(output_file), index=False)
+        LOG.info(f"Results written to {output_file}")
+        return df
 
     def _dataset_or_default(self, input_metadata):
         if self.dataset:

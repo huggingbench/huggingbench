@@ -131,34 +131,3 @@ def format_dtype(dtype):
         return dtype
 
 
-def append_to_csv(spec_dict: Dict, info: Dict, csv_file: str):
-    """
-    Appends the given Spec instance and info dictionary to a CSV file.
-
-    Parameters
-    ----------
-    spec : Spec
-        Instance of Spec class.
-    info : dict
-        Additional information to be written to the CSV file.
-    csv_file : str
-        The CSV file to append to.
-    """
-    # Merge Spec fields and info into a single dict
-    data = {**spec_dict, **info}
-
-    # Define fieldnames with Spec fields first
-    fieldnames = list(spec_dict.keys()) + list(info.keys())
-
-    # Check if the file exists to only write the header once
-    file_exists = os.path.isfile(csv_file)
-
-    with open(csv_file, "a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-
-        if not file_exists:
-            LOG.info(f"Creating new CSV file {fieldnames} and writing header")
-            writer.writeheader()  # Write header only once
-
-        writer.writerow(data)
-        LOG.info(f"CSV data written to '{csv_file}'")

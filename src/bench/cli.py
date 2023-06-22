@@ -6,7 +6,7 @@ import logging
 
 from bench.chart import ChartGen
 from bench.config import ExperimentSpec
-from bench.runner import ExperimentRunner
+from bench.exp_runner import ExperimentRunner
 
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger("CLI")
@@ -24,7 +24,7 @@ def hbench():
     run_parser.add_argument("--device", default=["cpu"], nargs="*", choices=["cpu", "cuda"])
     run_parser.add_argument("--half", default=[False], nargs="*", type=bool, help="Whether to use half precision")
     run_parser.add_argument(
-        "--client_worker",
+        "--client_workers",
         default=[1],
         nargs="*",
         type=int,
@@ -38,10 +38,10 @@ def hbench():
     )
     run_parser.add_argument("--task", default=None, help="Model task(s) to benchmark. Used with --model_local_path")
     run_parser.add_argument("--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference..")
-    run_parser.add_argument("--instance_count", default=1, type=int, help="Triton server instance count.")
+    run_parser.add_argument("--instance_count", default=[1], nargs="*", help="Triton server model instance count.")
     run_parser.add_argument("--async_client", default=False, type=bool, help="Use async triton client.")
     run_parser.add_argument(
-        "--workspace", default="temp/", help="Directory holding experiment results and intermediate files."
+        "--workspace", default="temp/", help="Directory holding model configuration and experiment results"
     )
     run_parser.set_defaults(func=run_command)
 
@@ -50,7 +50,7 @@ def hbench():
     chart_parser.add_argument(
         "--workspace",
         default="temp/",
-        help="Directory holding experiment results and intermediate files",
+        help="Directory holding model configuration and experiment results",
         required=True,
     )
     chart_parser.add_argument(
@@ -70,7 +70,7 @@ def run_command(args):
     format_types = args.format
     devices = args.device
     half = args.half
-    client_workers = args.client_worker
+    client_workers = args.client_workers
     hf_id = args.hf_id
     model_local_path = args.model_local_path
     task = args.task
@@ -85,23 +85,24 @@ def run_command(args):
             for h in half:
                 for w in client_workers:
                     for b in batch_size:
-                        experiment = ExperimentSpec(
-                            hf_id=hf_id,
-                            task=task,
-                            model_local_path=model_local_path,
-                            format=f,
-                            device=d,
-                            half=h,
-                            client_workers=w,
-                            batch_size=b,
-                            async_client=async_client,
-                            instance_count=instance_count,
-                        )
-                        if experiment.is_valid():
-                            LOG.info(f"Adding valid experiment: {experiment}")
-                            experiments.append(experiment)
-                        else:
-                            LOG.info(f"Skipping invalid experiment: {experiment}")
+                        for i in instance_count:
+                            experiment = ExperimentSpec(
+                                hf_id=hf_id,
+                                task=task,
+                                model_local_path=model_local_path,
+                                format=f,
+                                device=d,
+                                half=h,
+                                client_workers=w,
+                                batch_size=b,
+                                async_client=async_client,
+                                instance_count=i,
+                            )
+                            if experiment.is_valid():
+                                LOG.info(f"Adding valid experiment: {experiment}")
+                                experiments.append(experiment)
+                            else:
+                                LOG.info(f"Skipping invalid experiment: {experiment}")
 
         ExperimentRunner(
             experiments,

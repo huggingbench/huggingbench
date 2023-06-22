@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 from bench.config import ExperimentSpec
-from bench.runner import ExperimentRunner
+from bench.exp_runner import ExperimentRunner
 from server.util import ENV_TRITON_SERVER_DOCKER
 
 
