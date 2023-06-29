@@ -10,17 +10,15 @@ LOG = logging.getLogger(__name__)
 class ModelExporter:
     # export model to onnx, openvino, trt...
 
-    def __init__(self, hf_id, spec: ExperimentSpec, task=None, base_dir=None) -> None:
-        self.hf_id = hf_id
+    def __init__(self, spec: ExperimentSpec) -> None:
         self.spec = spec
-        self.task = task
-        self.base_dir = os.path.abspath(base_dir) if (base_dir) else os.getcwd()
+        self.base_dir = os.path.abspath(spec.workspace_dir) if (spec.workspace_dir) else os.getcwd()
         self.cache_dir = os.path.join(self.base_dir, "_optimum_cache")
         os.makedirs(self.cache_dir, exist_ok=True)
 
-    def export(self, model_input_path: str = None) -> ModelInfo:
+    def export(self) -> ModelInfo:
         #  onnx format is a starting point
-        onnx_model_info = self._export_hf2onnx("0.001", model_input_path)
+        onnx_model_info = self._export_hf2onnx("0.001", self.spec.model_local_path)
         inputs = hf_model_input(
             onnx_model_info.model_file_path(),
             half=onnx_model_info.half(),
@@ -46,11 +44,16 @@ class ModelExporter:
         LOG.info(PRINT_HEADER % " ONNX EXPORT ")
 
         onnx_model_info = ModelInfo(
-            self.hf_id,
-            self.task,
+            self.spec.hf_id,
+            self.spec.task,
             Format(
                 "onnx",
-                {"atol": atol, "device": self.spec.device, "half": self.spec.half, "batch_size": self.spec.batch_size},
+                {
+                    "atol": atol,
+                    "device": self.spec.device,
+                    "precision": self.spec.precision,
+                    "batch_size": self.spec.batch_size,
+                },
             ),
             base_dir=self.base_dir,
         )
@@ -62,7 +65,7 @@ class ModelExporter:
         model_dir = onnx_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
 
-        model_arg = f"--model={self.hf_id}" if model_input is None else f"--model=/model_input"
+        model_arg = f"--model={self.spec.hf_id}" if model_input is None else f"--model=/model_input"
 
         cmd = [
             "optimum-cli",
@@ -78,15 +81,15 @@ class ModelExporter:
             f"--atol={atol}",
         ]
 
-        # export of f16 only possible on cuda
-        if self.spec.half and self.spec.device == "cuda":
+        # export of f16 only possible on gpu
+        if self.spec.precision == "fp16" and self.spec.device == "gpu":
             cmd.append("--fp16")
-            cmd.append("--device=cuda")
+            cmd.append("--device=gpu")
         else:
-            LOG.info("Skipping f16 for onnx export. Device must be cuda to support f16.")
+            LOG.info("Skipping f16 for onnx export. Device must be gpu to support f16.")
 
-        if self.task:
-            cmd.append(f"--task={self.task}")
+        if self.spec.task:
+            cmd.append(f"--task={self.spec.task}")
 
         cmd.append(onnx_model_info.model_dir())
 
@@ -131,7 +134,7 @@ class ModelExporter:
             f"--input={input_str}",
         ]
 
-        if self.spec.half:
+        if self.spec.precision == "fp16":
             cmd.append(f"--compress_to_fp16")
 
         run_docker_sdk(image_name="openvino", docker_args=cmd)

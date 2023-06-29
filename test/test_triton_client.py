@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from client.triton_client import TritonClient, INPUT_KEY_DATATYPE
+from plugins.triton.triton_client import TritonClient, INPUT_KEY_DATATYPE
 from client.bert import BertGenDataset
 
 

@@ -11,20 +11,22 @@ class ExperimentSpec:
     hf_id: str
     format: str
     device: str
-    half: bool
     task: str = None
     batch_size: int = 1
     sequence_length: int = 100
     client_workers: int = 1
-    async_client: bool = False
     instance_count: int = 1
     model_local_path: str = None
+    dataset_id: str = None  # if not set we generate random data
+    precision: str = "fp32"  # allowed values are fp32, fp16, int8
+    extra_params: dict = field(default_factory=dict)  # extra parameters to pass to the model
+    workspace_dir: str = TEMP_DIR
 
     def is_valid(self):
-        if self.format == "onnx" and self.device == "cpu" and self.half:
+        if self.format == "onnx" and self.device == "cpu" and self.precision == "fp16":
             return False
 
-        if self.format == "openvino" and self.device == "cuda":
+        if self.format == "openvino" and self.device == "gpu":
             return False
 
         if self.format == "trt" and self.device == "cpu":
@@ -37,12 +39,11 @@ class ExperimentSpec:
             "hf_id": self.hf_id,
             "task": self.task if self.task else "",
             "format": self.format,
-            "gpu": str(self.device == "cuda"),
-            "half": str(self.half),
+            "device": self.device,
+            "precision": self.precision,
             "batch_size": str(self.batch_size),
             "sequence_length": str(self.sequence_length),
             "client_workers": str(self.client_workers),
-            "async_client": str(self.async_client),
         }
 
     def get_csv_output_path(self, base_dir):
@@ -56,14 +57,14 @@ class Format:
     origin: "Format" = None
 
     def gpu_enabled(self):
-        if self.parameters.get("device") == "cuda" or (self.origin and self.origin.parameters.get("device") == "cuda"):
+        if self.parameters.get("device") == "gpu" or (self.origin and self.origin.parameters.get("device") == "gpu"):
             return True
         return False
 
     def half(self):
-        if self.parameters.get("half", False) or (self.origin and self.origin.parameters.get("half", False)):
-            return True
-        return False
+        return self.parameters.get("precision", "fp32") == "fp16" or (
+            self.origin and self.origin.parameters.get("precision", "fp32") == "fp16"
+        )
 
 
 @dataclass
@@ -121,7 +122,6 @@ class ModelInfo:
 
     def with_shapes(self, input_shape, output_shape):
         return self.__class__(self.hf_id, self.task, self.format, self.base_dir, input_shape, output_shape)
-
 
 
 def get_os_friendly_path(hf_id: str):

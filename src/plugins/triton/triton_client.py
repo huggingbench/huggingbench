@@ -15,6 +15,8 @@ from prometheus_client import (
 from tritonclient.http import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype
 
+from bench.plugin import Client
+
 ### For dev purposes log INFO level
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__file__)
@@ -24,7 +26,7 @@ PROM_PORT = 8011  # Prometheus port
 INPUT_KEY_DATATYPE = "datatype"
 
 
-class TritonClient:
+class TritonClient(Client):
     """Interacts with Triton server using HTTP"""
 
     metric_infer_latency = Histogram(
@@ -67,10 +69,9 @@ class TritonClient:
             start_http_server(prom_port)
             TritonClient.prom_started = True
 
-    def infer(self, sample) -> httpclient.InferResult:
+    def infer(self, samples) -> httpclient.InferResult:
         """Runs inference on the triton server"""
-        batched_sample = [sample]
-        return self.infer_batch(batched_sample)
+        return self.infer_batch(samples)
 
     def infer_batch(self, samples) -> httpclient.InferResult:
         return self._infer_batch(samples, async_req=False)
