@@ -44,7 +44,7 @@ hbench = "bench.cli:hbench"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["client", "server", "bench"]
+include = ["client", "server", "bench", "plugins"]
 namespaces = false
 
 [tool.black]

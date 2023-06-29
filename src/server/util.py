@@ -129,5 +129,3 @@ def format_dtype(dtype):
         return "FP16"
     else:
         return dtype
-
-

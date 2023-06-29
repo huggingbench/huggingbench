@@ -13,9 +13,9 @@ from timeit import default_timer as timer
 from typing import List
 
 from tritonclient.http import InferenceServerException
+from bench.plugin import Client
 
 from client.base import DatasetAlias, DatasetIterator
-from client.triton_client import TritonClient
 
 LOG = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ class RunnerConfig:
         self.batch_size = batch_size
         self.async_req = async_req
         self.workers = workers
+
 
 @dataclass
 class RunnerStats:
@@ -43,7 +44,7 @@ class Runner:
     inference client and collecting the results.
     It manages client concurrency and async behavior."""
 
-    def __init__(self, cfg: RunnerConfig, client: TritonClient, dataset: DatasetAlias) -> None:
+    def __init__(self, cfg: RunnerConfig, client: Client, dataset: DatasetAlias) -> None:
         self.config = cfg
         self.client = client
         self.dataset = DatasetIterator(dataset, infinite=False)
@@ -66,7 +67,8 @@ class Runner:
             start = timer()
             success = False
             if self.config.async_req:
-                req = self.client.infer_batch_async(batch)
+                LOG.warn("Async requests not supported atm. Sending sync request")
+                req = self.client.infer(batch)
                 if req is not None:
                     async_reqs.put(req)
                     LOG.debug("Sent async batch request")
@@ -74,7 +76,7 @@ class Runner:
                 else:
                     LOG.warn("Failed async batch request")
             else:
-                res = self.client.infer_batch(batch)
+                res = self.client.infer(batch)
                 if res is not None:
                     LOG.debug("Received batch response")
                     success = True

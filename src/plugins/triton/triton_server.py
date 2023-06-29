@@ -20,6 +20,7 @@ from tritonclient.grpc.model_config_pb2 import (
 )
 
 from bench.config import ExperimentSpec, ModelInfo
+from bench.plugin import Server
 from server.util import ENV_TRITON_SERVER_DOCKER, PRINT_HEADER, print_container_logs
 
 # multiprocessing.set_start_method('spawn')
@@ -179,7 +180,7 @@ class TritonConfig:
 import docker
 
 
-class TritonServer:  # This is just a placeholder. Replace it with your actual class.
+class TritonServer(Server):  # This is just a placeholder. Replace it with your actual class.
     def __init__(self, triton_config, no_processor=1):
         self.model_repo = triton_config.model_repo
         self.model_name = triton_config.model_info.unique_name()
@@ -226,6 +227,7 @@ class TritonServer:  # This is just a placeholder. Replace it with your actual c
                 wait_event.set()
 
         t = Thread(target=print_container_logs, args=[self.container, container_ready])
+        t.daemon = True
         t.start()
         wait_event.wait()
         return self
