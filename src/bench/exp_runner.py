@@ -44,12 +44,14 @@ class ExperimentRunner:
             finally:
                 server.stop()
             if success:
-                df = self.process_results(spec, stats)
+                df = self.process_results(spec, stats, self.plugin.get_name())
                 self.chart_gen.add_data(df)
         print(tabulate(self.chart_gen.data, headers="keys", tablefmt="psql", showindex="never"))
-        self.chart_gen.plot_charts(workspace_dir=self.experiments[0].workspace_dir)
+        out_dir = self.experiments[0].workspace_dir + "/" + self.plugin.get_name()
+        os.makedirs(out_dir, exist_ok=True)
+        self.chart_gen.plot_charts(output_dir=out_dir)
 
-    def process_results(self, spec: ExperimentSpec, stats: RunnerStats) -> pd.DataFrame:
+    def process_results(self, spec: ExperimentSpec, stats: RunnerStats, plugin: str) -> pd.DataFrame:
         # Calculate percentiles and append to csv
         exec_times = np.array(stats.execution_times)
         median = np.median(exec_times)
@@ -64,15 +66,17 @@ class ExperimentRunner:
             "99_percentile": percentile_99,
         }
         info = vars(spec)
-        data = {**info, **res_dict}
+        data = {**info, **res_dict, "plugin": plugin}
         df = pd.DataFrame(data, index=[0])
-        output_file = spec.get_csv_output_path(spec.workspace_dir)
+        output_dir = spec.workspace_dir + "/" + plugin
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = spec.get_csv_output_path(output_dir)
         df.to_csv(output_file, mode="a", header=not os.path.exists(output_file), index=False)
         LOG.info(f"Results written to {output_file}")
         return df
 
     def _dataset_or_random(self, dataset_id: str, inputs: list[Input]) -> DatasetAlias:
-        if dataset_id:
+        if dataset_id != "random":
             return get_dataset(dataset_id)
         else:
             adjusted_inputs = [

@@ -39,6 +39,11 @@ class Plugin:
         """Register each plugin class."""
         super().__init_subclass__(**kwargs)
         Plugin._plugin_classes[name] = cls
+        cls._name = name
+
+    def get_name(self) -> str:
+        """Return the name of the plugin from passed class attribute"""
+        return self._name
 
     @abstractmethod
     def client(self, spec: ExperimentSpec, model: ModelInfo) -> Client:

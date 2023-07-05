@@ -17,7 +17,7 @@ class ExperimentSpec:
     client_workers: int = 1
     instance_count: int = 1
     model_local_path: str = None
-    dataset_id: str = None  # if not set we generate random data
+    dataset_id: str = "random"  # if not set we generate random data
     precision: str = "fp32"  # allowed values are fp32, fp16, int8
     extra_params: dict = field(default_factory=dict)  # extra parameters to pass to the model
     workspace_dir: str = TEMP_DIR
@@ -44,6 +44,7 @@ class ExperimentSpec:
             "batch_size": str(self.batch_size),
             "sequence_length": str(self.sequence_length),
             "client_workers": str(self.client_workers),
+            "dataset_id": self.dataset_id,
         }
 
     def get_csv_output_path(self, base_dir):
