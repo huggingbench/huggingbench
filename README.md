@@ -16,7 +16,7 @@ HuggingBench is an extensible, open-source MLOps tool for experimenting around s
 
 # 📋 Requirements
 
-Python 3.9+ is required.
+Python 3.9 or 3.10 is required.
 
 HuggingBench use Docker containers to run various inference servers so you should have Docker available
 on your system.
@@ -51,18 +51,18 @@ Install dependencies and the project:
 
 ```pip install -e .```
 
-Pull Nvidia Triton server docker image (approx 8GB in size):
+Pull Nvidia Triton server docker image (approx 8GB in size so please be patient :) ):
 
 ```docker pull nvcr.io/nvidia/tritonserver:23.06-py3```
 
-Run command to see how client concurreny affects serving of HuggingFace model https://huggingface.co/prajjwal1/bert-tiny using NVidia Triton Inference server:
+Run command to see how client concurreny affects serving of HuggingFace model https://huggingface.co/prajjwal1/bert-tiny on NVidia Triton Inference server:
 
 ```hbench triton --hf_id prajjwal1/bert-tiny --client_workers 1 2 4```
 
-Above will generate 3 experiments: first with 1 concurrent client, then 2 and 4. Each experiment will spin
+Above command will generate 3 experiments: first with 1 concurrent client, then 2 and 4. Each experiment will spin
 up a docker container with Triton server, deploy the model with the right configuration and generate the load
 by sending inference requests. Upon completion metric table will be presented in the terminal along with the 
-charts exported in JPEG. 
+charts exported in JPEG. You can find the results below.
 
 # 💡 How it works
 
@@ -149,7 +149,7 @@ Charts showing few metrics while benchmarking `bert-base-uncased` deployed on Tr
 
 ## microsoft/resnet-50
 
-TODO:
+TODO
 
 # 💁 Contributing
 
