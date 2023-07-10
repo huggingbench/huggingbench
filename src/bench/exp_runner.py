@@ -46,7 +46,8 @@ class ExperimentRunner:
             if success:
                 df = self.process_results(spec, stats, self.plugin.get_name())
                 self.chart_gen.add_data(df)
-        print(tabulate(self.chart_gen.data, headers="keys", tablefmt="psql", showindex="never"))
+        tabulate_cols = ChartGen.labels + ["avg", "median", "90_percentile"]
+        print(tabulate(self.chart_gen.data[tabulate_cols], headers="keys", tablefmt="psql", showindex="never"))
         out_dir = self.experiments[0].workspace_dir + "/" + self.plugin.get_name()
         os.makedirs(out_dir, exist_ok=True)
         self.chart_gen.plot_charts(output_dir=out_dir)

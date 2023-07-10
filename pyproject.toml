@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "huggingbench"
-description = "Benchmark hugginfface models in different formats such and configs in Triton Inference Server"
+description = "Benchmark and experiment with Huggingface model serving"
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["HuggingFace", "Performance Benchmark", "ML model"]

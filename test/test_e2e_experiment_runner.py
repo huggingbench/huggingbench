@@ -22,6 +22,6 @@ def test_experiment_runner():
     triton_plugin = plugin_manager.get_plugin("triton")
     ExperimentRunner(triton_plugin, [experiment]).run()
 
-    csv_file = Path(experiment.get_csv_output_path("./temp"))
+    csv_file = Path(experiment.get_csv_output_path("./temp/triton"))
     if not csv_file.exists():
         assert False, "CSV file not generated"

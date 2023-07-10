@@ -1,0 +1,9 @@
+# If youd don't have a dedicated GPU, you can use this Dockerfile to build a CPU-only image. (works on Mac M1 & M2 as well)
+FROM python:3.9
+
+RUN python -m pip install --upgrade pip
+RUN python -m pip install transformers==4.29.2
+RUN python -m pip install optimum==1.8.5
+RUN python -m pip install optimum[onnxruntime]==1.8.5
+
+CMD []
