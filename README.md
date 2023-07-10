@@ -1,6 +1,7 @@
 [![python](https://img.shields.io/badge/python-3.9%20|%203.10-blue)](https://www.python.org)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-![main](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?branch=main)
+[![HuggingBench](https://github.com/legobench/huggingbench/actions/workflows/main.yml/badge.svg?branch=main&event=push)](https://github.com/legobench/huggingbench/actions/workflows/main.yml)
+
 # HuggingBench
 
 <div align="center">
@@ -85,15 +86,15 @@ Here is a list of flags that can be passed in as command line arguments that are
 we want to benchmark:
 
 
-| Flag | Description | Options | Default |
-| ---- | ---         | ---     | ---     |
-| `format` | Model format to use. | onnx, trt, openvino | onnx |
-| `device` | Device model runs on. | cpu, gpu | cpu |
-| `precision` | Model precision. | fp32, fp16 | fp32 |
-| `client_workers` | Number of concurrent clients sending inference requests | integer | 1 |
-| `hf_id` | Hugging Face model ID. It needs to be public because we download the model from HuggingFace | eg. bert-base-uncased | |
-| `batch_size` | Batch size for sending inference requests. Many model have max batch size of 4 | usually from 1 to 4  | 1 |
-| `instance_count` | How many instances of ML model to create. More instances can help with throughput but require more HW resource | 1 or few | 1 |
+| Flag             | Description                                                                                                    | Options               | Default |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- | --------------------- | ------- |
+| `format`         | Model format to use.                                                                                           | onnx, trt, openvino   | onnx    |
+| `device`         | Device model runs on.                                                                                          | cpu, gpu              | cpu     |
+| `precision`      | Model precision.                                                                                               | fp32, fp16            | fp32    |
+| `client_workers` | Number of concurrent clients sending inference requests                                                        | integer               | 1       |
+| `hf_id`          | Hugging Face model ID. It needs to be public because we download the model from HuggingFace                    | eg. bert-base-uncased |         |
+| `batch_size`     | Batch size for sending inference requests. Many model have max batch size of 4                                 | usually from 1 to 4   | 1       |
+| `instance_count` | How many instances of ML model to create. More instances can help with throughput but require more HW resource | 1 or few              | 1       |
 
 Experiments are cartesian product of all given CLI arguments. For example if we provide `--format onnx openvino` and `--client_workers 1 2 4` we will generate 6 experiments: [[onnx, 1], [onnx,2], [onnx,4], [openvino, 1], [openvino, 2], [openvino, 4]].
 
