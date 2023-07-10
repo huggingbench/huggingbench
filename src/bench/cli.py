@@ -40,11 +40,16 @@ def add_common_args(parser: argparse.ArgumentParser):
         default=None,
         help="If not specified, will download from HuggingFace. When given a task name must also be specified.",
     )
-    parser.add_argument("--task", default=None, help="Model tasks to benchmark. Used with --model_local_path")
+    parser.add_argument("--task", default=None, help="Model tasks to benchmark. Only used with --model_local_path")
     parser.add_argument("--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference..")
     parser.add_argument("--instance_count", default=[1], nargs="*", help="ML model instance count.")
     parser.add_argument(
         "--workspace", default="temp/", help="Directory holding model configuration and experiment results"
+    )
+    parser.add_argument(
+        "--dataset_id",
+        default="random",
+        help="HuggingFace dataset ID to use for benchmarking. By default we generate random dataset.",
     )
 
 
@@ -80,6 +85,7 @@ def run(args):
     batch_size = args.batch_size
     instance_count = args.instance_count
     workspace_dir = args.workspace
+    dataset_id = args.dataset_id
 
     plugin_manager = PluginManager()
     triton_plugin = plugin_manager.get_plugin("triton")
@@ -102,6 +108,7 @@ def run(args):
                                 batch_size=b,
                                 instance_count=i,
                                 workspace_dir=workspace_dir,
+                                dataset_id=dataset_id,
                             )
                             if experiment.is_valid():
                                 LOG.info(f"Adding valid experiment: {experiment}")
