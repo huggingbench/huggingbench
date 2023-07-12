@@ -3,6 +3,8 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from bench.config import get_os_friendly_path
+
 LOG = logging.getLogger(__name__)
 
 
@@ -31,7 +33,9 @@ class ChartGen:
         else:
             self.data = pd.concat([self.data, df], ignore_index=True)
 
-    def plot_chart(self, labels: pd.DataFrame, chart_data: pd.DataFrame, chart_name: str, output_dir: str):
+    def plot_chart(
+        self, labels: pd.DataFrame, chart_data: pd.DataFrame, chart_name: str, output_dir: str, model_id: str
+    ):
         # Set the figure size
         fig, ax = plt.subplots(figsize=(12, 6))
 
@@ -56,13 +60,13 @@ class ChartGen:
 
         # Adjust spacing between subplots and ensure labels fit
         plt.tight_layout()
-
-        chart_abs_path = os.path.abspath(f"{output_dir}/{chart_name}.png")
+        file_name = f"{get_os_friendly_path(model_id)}_{chart_name}.png"
+        chart_abs_path = os.path.abspath(f"{output_dir}/{file_name}")
         fig.savefig(chart_abs_path)
         LOG.info(f"Saved chart to '{chart_abs_path}'")
         plt.close(fig)
 
-    def plot_charts(self, output_dir: str, df: pd.DataFrame = None):
+    def plot_charts(self, output_dir: str, model_id: str, df: pd.DataFrame = None):
         if df is None and self.data is None:
             return ValueError("No data to plot")
         # Extract required columns
@@ -83,7 +87,7 @@ class ChartGen:
         }
 
         for chart_name, chart_data in charts.items():
-            self.plot_chart(labels, chart_data, chart_name, output_dir)
+            self.plot_chart(labels, chart_data, chart_name, output_dir, model_id)
 
 
 if __name__ == "__main__":

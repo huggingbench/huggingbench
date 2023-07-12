@@ -1,16 +1,11 @@
 ## If you have a dedicated GPU, you can use this Dockerfile to build a GPU-enabled image.
 FROM python:3.9
 
-RUN python -m pip install --upgrade pip
-RUN python -m pip install transformers==4.29.2
-RUN python -m pip install optimum==1.8.5
-RUN python -m pip install optimum[onnxruntime]==1.8.5
-RUN python -m pip pip install optimum[onnxruntime-gpu]==1.8.5
-
-RUN python -m pip install optimum[openvino,nncf]==1.8.5
-RUN python -m pip install polygraphy==0.47.1
-RUN python -m pip install tritonclient[all]==2.33.0
-RUN python -m pip install protobuf==3.20.2
-
+RUN python -m pip install --upgrade pip --no-cache-dir 
+RUN python -m pip install transformers==4.29.2 --no-cache-dir 
+RUN python -m pip install optimum==1.8.5 --no-cache-dir 
+RUN python -m pip install optimum[onnxruntime]==1.8.5 --no-cache-dir 
+RUN python -m pip install optimum[openvino,nncf]==1.8.5 --no-cache-dir 
+RUN python -m pip install optimum[onnxruntime-gpu]==1.8.5 --no-cache-dir 
 
 CMD []

@@ -15,6 +15,11 @@
 
 HuggingBench is an extensible, open-source MLOps tool for experimenting around serving ML models from Huggingface. By running one command from terminal the tool generates various model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completition. This should save time when looking for an optimal model serving cofiguration or just help with understanding latency/throughput and hardware needs for serving the model.
 
+## 📝 Note
+
+This was started as a hobby project to learn & explore various ML models and respective model servers. It is still in early days so might be 🐞.
+We definitevly plan to improve the tool so please stay tuned. We are happy to get your feedback so feel free to report problems, wishes, etc..
+
 # 📋 Requirements
 
 Python 3.9 or 3.10 is required.
@@ -22,8 +27,8 @@ Python 3.9 or 3.10 is required.
 HuggingBench use Docker containers to run various inference servers so you should have Docker available
 on your system.
 
-* Instructions for installing Docker on Ubuntu https://docs.docker.com/desktop/install/ubuntu/
-* Instructions for installing Docker on Mac https://docs.docker.com/desktop/install/mac-install/
+* Instructions for installing Docker Engine on Ubuntu https://docs.docker.com/engine/install/ubuntu/
+* Instructions for installing Docker Desktop on Mac https://docs.docker.com/desktop/install/mac-install/
 
 ## GPU support (optional)
 
@@ -52,9 +57,11 @@ Install dependencies and the project:
 
 ```pip install -e .```
 
-Pull Nvidia Triton server docker image (approx 8GB in size so please be patient :) ):
+Pull Nvidia Triton server Docker image used by the Triton Plugin:
 
-```docker pull nvcr.io/nvidia/tritonserver:23.06-py3```
+```docker pull nvcr.io/nvidia/tritonserver:23.04-py3```
+
+(NOTE: if you are running with GPU/CUDA you might want to make sure that your host intsalled CUDA drivers are compatible with the ones provided in the container)
 
 Run command to see how client concurreny affects serving of HuggingFace model https://huggingface.co/prajjwal1/bert-tiny on NVidia Triton Inference server:
 
@@ -71,7 +78,7 @@ charts exported in JPEG. You can find the results below.
 
 HuggingBench can be extended with an additional inference servers by implementing the Plugin. At the
 moment NVidia Triton server is only supported but more are coming soon. We also encourage you to contribute
-and help us make HugggingBench better!
+and help us make HugggingBench better (more on plugins [here](#plugins))!
 
 
 Docker containers are used a lot to helps us avoid dependency hell: no need to manually
@@ -124,7 +131,7 @@ INFO:bench.chart:Saved chart to '/Users/niksa/projects/huggingbench/temp/triton/
 
 Inference throughput (req/s):
  
-![Inference throughput (req/s)](./docs/throughputs.png?raw=true "Inference throughput (req/s)")
+![Inference throughput (req/s)](./docs/bert-tiny-throughputs.png "Inference throughput (req/s)")
 
 Above chart is showing that by increasing concurrency on the client side we increase model serving throughput.
 
@@ -146,11 +153,45 @@ Charts showing few metrics while benchmarking `bert-base-uncased` deployed on Tr
 ![Benchmark Metrics](./docs/bert-base-uncased-grafana.png?raw=true "Benchmark metrics")
 
 
+## Plugins
+
+To be able to easily add more inference servers and compare across, HuggingBench uses Plugin architecture. Each inference server
+becomes a plugin and needs to implement classes defined in [plugin.py](./src/bench/plugin.py). Check out [triton plugin](./src/plugins/triton/) for an example of plugin implementation.
+
+
 # 📖 More Examples
 
 ## microsoft/resnet-50
 
-TODO
+Let's run benchmarks to figure out the best way to serve `resnet-50` with GPU on Triton server.
+
+```
+hbench triton --id microsoft/resnet-50 --device gpu --batch_size 1 4 --client_workers 1 4 --format onnx openvino trt
+```
+
+Notice that we passed in `openvino` as potential format but since we set `--device gpu` it will not run openvino benchmarks.
+
+Below we can see results where we can see that TensorRT format performs a lot better then ONNX.  We can also see that smaller
+batches and more concurrency result in more throughput.
+
+
+```
++----------+----------+-------------+--------------+------------------+------------------+----------------+--------------+---------------------+------------+------------+-----------------+
+| format   | device   | precision   |   batch_size |   client_workers |   instance_count |   success_rate | dataset_id   | hf_id               |        avg |     median |   90_percentile |
+|----------+----------+-------------+--------------+------------------+------------------+----------------+--------------+---------------------+------------+------------+-----------------|
+| onnx     | gpu      | fp32        |            1 |                1 |                1 |       155.25   | random       | microsoft/resnet-50 | 0.00638321 | 0.00485436 |      0.00512229 |
+| onnx     | gpu      | fp32        |            4 |                1 |                1 |        57.6713 | random       | microsoft/resnet-50 | 0.0172525  | 0.0116182  |      0.0120003  |
+| onnx     | gpu      | fp32        |            1 |                4 |                1 |       190.919  | random       | microsoft/resnet-50 | 0.0208571  | 0.0146834  |      0.0160036  |
+| onnx     | gpu      | fp32        |            4 |                4 |                1 |        74.5767 | random       | microsoft/resnet-50 | 0.0532744  | 0.0301682  |      0.0315603  |
+| trt      | gpu      | fp32        |            1 |                1 |                1 |       646.863  | random       | microsoft/resnet-50 | 0.00150038 | 0.00146858 |      0.00156489 |
+| trt      | gpu      | fp32        |            4 |                1 |                1 |       206.389  | random       | microsoft/resnet-50 | 0.004778   | 0.00472103 |      0.00498765 |
+| trt      | gpu      | fp32        |            1 |                4 |                1 |      1034.4    | random       | microsoft/resnet-50 | 0.00347166 | 0.00314214 |      0.00403697 |
+| trt      | gpu      | fp32        |            4 |                4 |                1 |       276.856  | random       | microsoft/resnet-50 | 0.0130047  | 0.0132595  |      0.0149541  |
++----------+----------+-------------+--------------+------------------+------------------+----------------+--------------+---------------------+------------+------------+-----------------+
+
+```
+
+![Inference throughput (req/s)](./docs/resnet-50-throughputs.png "Inference throughput (req/s)")
 
 # 💁 Contributing
 

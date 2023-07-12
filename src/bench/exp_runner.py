@@ -26,6 +26,7 @@ class ExperimentRunner:
         self.chart_gen = ChartGen()
 
     def run(self):
+        failed_exp = []
         for spec in self.experiments:
             try:
                 model = self.plugin.model(spec)
@@ -41,16 +42,24 @@ class ExperimentRunner:
                 success = True
             except Exception as e:
                 LOG.error(f"Experiment {spec} has failed: {e}", exc_info=True)
+                success = False
+                failed_exp.append(spec)
             finally:
                 server.stop()
             if success:
                 df = self.process_results(spec, stats, self.plugin.get_name())
                 self.chart_gen.add_data(df)
         tabulate_cols = ChartGen.labels + ["avg", "median", "90_percentile"]
+        if len(failed_exp) > 0:
+            print(f"NOTE! Following experiments have failed:\n {failed_exp}")
         print(tabulate(self.chart_gen.data[tabulate_cols], headers="keys", tablefmt="psql", showindex="never"))
-        out_dir = self.experiments[0].workspace_dir + "/" + self.plugin.get_name()
+        out_dir = (
+            self.experiments[0].workspace_dir + "/" + self.plugin.get_name()
+        )  # all experiments have the same workspace_dir
         os.makedirs(out_dir, exist_ok=True)
-        self.chart_gen.plot_charts(output_dir=out_dir)
+        self.chart_gen.plot_charts(
+            output_dir=out_dir, model_id=self.experiments[0].hf_id
+        )  # all experiments have the same hf_id
 
     def process_results(self, spec: ExperimentSpec, stats: RunnerStats, plugin: str) -> pd.DataFrame:
         # Calculate percentiles and append to csv
@@ -83,9 +92,4 @@ class ExperimentRunner:
             adjusted_inputs = [
                 Input(name=i.name, dtype=i.dtype, dims=[100 if d == -1 else d for d in i.dims]) for i in inputs
             ]
-            #     lambda i: Input(name=i.name, dtype=i.dtype, dims=[100 if s == -1 else s for s in i.dims][1:]), inputs
-            # )
-
-            #  for i in inputs
-            # ]
             return DatasetGen(adjusted_inputs, size=1000).dataset

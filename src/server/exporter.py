@@ -73,7 +73,7 @@ class ModelExporter:
             "onnx",
             model_arg,
             "--framework=pt",
-            f"--device={self.spec.device}",
+            f"--device={ 'cuda' if self.spec.device == 'gpu' else 'cpu'}",
             f"--cache_dir={self.cache_dir}",
             f"--batch_size={self.spec.batch_size}",
             f"--sequence_length={self.spec.sequence_length}",
@@ -84,7 +84,7 @@ class ModelExporter:
         # export of f16 only possible on gpu
         if self.spec.precision == "fp16" and self.spec.device == "gpu":
             cmd.append("--fp16")
-            cmd.append("--device=gpu")
+
         else:
             LOG.info("Skipping f16 for onnx export. Device must be gpu to support f16.")
 

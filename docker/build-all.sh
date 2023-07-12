@@ -6,7 +6,7 @@ SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
 while true; do
 
-read -p "Do you have a dedicated GPU? (y/n)" yn
+read -p "Do you have a dedicated GPU/cuda? (y/n)" yn
 
 case $yn in 
 	[yY] ) GPU=true;

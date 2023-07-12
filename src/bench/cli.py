@@ -1,14 +1,16 @@
-import sys
 from gevent import monkey
 
-from bench.plugin_manager import PluginManager, PLUGINS
-
 monkey.patch_all()  # this is needed to make gevent work with Threads
+
+from bench.plugin_manager import PluginManager, PLUGINS
+from client.dataset import MODEL_DATASET
+
+
 import argparse
 import logging
+import sys
 
-from bench.chart import ChartGen
-from bench.config import ExperimentSpec
+from bench.config import TEMP_DIR, ExperimentSpec
 from bench.exp_runner import ExperimentRunner
 
 logging.basicConfig(level=logging.INFO)
@@ -18,13 +20,14 @@ LOG = logging.getLogger("CLI")
 def add_common_args(parser: argparse.ArgumentParser):
     # Define the command-line arguments with their default values
 
+    parser.add_argument("--id", help="HuggingFace model ID to benchmark or unique model identfier", required=True)
     parser.add_argument("--format", default=["onnx"], nargs="*", choices=["onnx", "trt", "openvino"])
     parser.add_argument("--device", default=["cpu"], nargs="*", choices=["cpu", "gpu"])
     parser.add_argument(
         "--precision",
         default=["fp32"],
         nargs="*",
-        choices=["fp32, fp16"],  # TODO:  add int8 support in the future
+        choices=["fp32", "fp16"],  # TODO:  add int8 support in the future
         help="What precision to use when converting the model.",
     )
     parser.add_argument(
@@ -34,23 +37,23 @@ def add_common_args(parser: argparse.ArgumentParser):
         type=int,
         help="Number of client workers sending concurrent requests to the server.",
     )
-    parser.add_argument("--hf_id", help="HuggingFace model ID(s) to benchmark", required=True)
-    parser.add_argument(
-        "--model_local_path",
-        default=None,
-        help="If not specified, will download from HuggingFace. When given a task name must also be specified.",
-    )
-    parser.add_argument("--task", default=None, help="Model tasks to benchmark. Only used with --model_local_path")
-    parser.add_argument("--batch_size", default=[1], nargs="*", help="Batch size(s) to use for inference..")
+    parser.add_argument("--batch_size", default=[1], nargs="*", type=int, help="Batch size(s) to use for inference..")
     parser.add_argument("--instance_count", default=[1], nargs="*", help="ML model instance count.")
     parser.add_argument(
-        "--workspace", default="temp/", help="Directory holding model configuration and experiment results"
+        "--workspace", default=TEMP_DIR, help="Directory holding model configuration and experiment results"
     )
     parser.add_argument(
         "--dataset_id",
         default="random",
+        choices=MODEL_DATASET.keys(),
         help="HuggingFace dataset ID to use for benchmarking. By default we generate random dataset.",
     )
+    parser.add_argument(
+        "--model_local_path",
+        default=None,
+        help="Path of model to benchmark. In this case we will not download model from HuggingFace Hub. You would still need to provide hf_id as we use it as a unique identifier for the model.",
+    )
+    parser.add_argument("--task", default=None, help="Model tasks to benchmark. Only used with --model_local_path")
 
 
 def hbench():
@@ -68,10 +71,15 @@ def hbench():
     for plugin_parser in plugin_parsers.values():
         add_common_args(plugin_parser)
 
-    args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
+    if len(sys.argv) == 1:
+        args = parser.parse_args(["--help"])
+    elif len(sys.argv) == 2:
+        args = parser.parse_args(sys.argv[1:] + ["--help"])
+    else:
+        args = parser.parse_args()
 
-    # Run the plugin
     run(args)
+    # Run the plugin
 
 
 def run(args):
@@ -79,7 +87,7 @@ def run(args):
     devices = args.device
     precisions = args.precision
     client_workers = args.client_workers
-    hf_id = args.hf_id
+    hf_id = args.id
     model_local_path = args.model_local_path
     task = args.task
     batch_size = args.batch_size
@@ -114,7 +122,7 @@ def run(args):
                                 LOG.info(f"Adding valid experiment: {experiment}")
                                 experiments.append(experiment)
                             else:
-                                LOG.info(f"Skipping invalid experiment: {experiment}")
+                                LOG.warning(f"Skipping invalid experiment: {experiment}")
 
         ExperimentRunner(
             triton_plugin,
@@ -122,6 +130,5 @@ def run(args):
         ).run()
 
 
-## run mlperf by default
 if __name__ == "__main__":
     hbench()
