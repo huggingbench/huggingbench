@@ -115,7 +115,7 @@ we want to benchmark:
 
 Experiments are cartesian product of all given CLI arguments. For example if we provide `--format onnx openvino` and `--client_workers 1 2 4` we will generate 6 experiments: [[onnx, 1], [onnx,2], [onnx,4], [openvino, 1], [openvino, 2], [openvino, 4]].
 
-### Local models
+### 🏘️ Local models
 
 In case you want to run model that is not available on HuggingFace Hub you can point the tool to a folder containing the model.
 Model has to be in PyTorch format along with `config.json` file (https://huggingface.co/docs/transformers/main_classes/configuration , you can use HuggingFace librares to generate `config.json` from model). The `--task` must be given when using local models as it can not be infered.
@@ -162,7 +162,7 @@ Inference latency p90:
 Above chart is showing that increased client concurrency leads to increased latency which is expected
 as more requests are served at the same time.
 
-## Prometheus metrics
+## 📈 Prometheus metrics
 
 To provide better insight into benchmarks we collect metrics with Prometheus and use Grafana for charting.
 We collect metrics from respective inference server (eg Triton) together with the metrics emitted by HuggingBench. Follow the instructions [here](./docker/observability/README.md) to setup benchmark `Observability` stack.
@@ -173,7 +173,7 @@ Charts showing few metrics while benchmarking `bert-base-uncased` deployed on Tr
 ![Benchmark Metrics](./docs/bert-base-uncased-grafana.png?raw=true "Benchmark metrics")
 
 
-## Plugins
+## 🔌 Plugins
 
 To be able to easily add more inference servers and compare across, HuggingBench uses Plugin architecture. Each inference server
 becomes a plugin and needs to implement classes defined in [plugin.py](./src/bench/plugin.py). Check out [triton plugin](./src/plugins/triton/) for an example of plugin implementation.
