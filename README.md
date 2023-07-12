@@ -9,7 +9,6 @@
 </div>
 
 <h3 align="center">Benchmark and experiment with ML model serving</h3>
-<p align="center">Extensible open-source tool to easily benchmark models from <a link="https://huggingface.co"> HuggingFace </a></p> 
 
 # 🤖 Introduction
 
