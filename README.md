@@ -13,7 +13,14 @@
 
 # 🤖 Introduction
 
-HuggingBench is an extensible, open-source MLOps tool for experimenting around serving ML models from Huggingface. By running one command from terminal the tool generates various model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completition. This should save time when looking for an optimal model serving cofiguration or just help with understanding latency/throughput and hardware needs for serving the model.
+HuggingBench is an extensible, open-source MLOps tool for experimenting around serving ML models. By running one command from terminal the tool generates various model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completition. This should save time when looking for an optimal model serving cofiguration or just help with understanding latency/throughput and hardware needs for serving the model.
+
+**HuggingBench Design Principles**:
+
+* **Extensibility**: Easily incorporate new model servers, model formats, optimization techniques, and workloads for evaluation and comparison, allowing for flexibility and inclusion of current and future industry options across different hardware.
+* **Reproducibility**: Ensure that the benchmark can be reproduced reliably based on the provided specification.
+* **Production-Fidelity**: Strive to closely replicate the production environment, encompassing workload generation, model optimization, and server configuration options within the benchmark
+
 
 ## 📝 Note
 
@@ -35,6 +42,10 @@ on your system.
 
 To enable GPU acceleration for Docker containers running on NVidia GPU please follow the instructions
 from here https://github.com/NVIDIA/nvidia-container-toolkit#getting-started
+
+## Mac M1/M2
+
+CPU inference should work fine, however OpenVINO might not work.
 
 
 # 🏃 Quickstart
@@ -77,13 +88,6 @@ charts exported in JPEG. You can find the results below.
 
 # 💡 How it works
 
-**HuggingBench Design Principles**:
-
-* **Extensibility**: Easily incorporate new model servers, model formats, optimization techniques, and workloads for evaluation and comparison, allowing for flexibility and inclusion of current and future industry options across different hardware.
-* **Reproducibility**: Ensure that the benchmark can be reproduced reliably based on the provided specification.
-* **Production-Fidelity**: Strive to closely replicate the production environment, encompassing workload generation, model optimization, and server configuration options within the benchmark
-
-
 ![HuggingBench Architecture](./docs/huggingbench-arch.png?raw=true "HuggingBench Architecture")
 
 HuggingBench can be extended with an additional inference servers by implementing the Plugin. At the
@@ -109,7 +113,7 @@ we want to benchmark:
 | `device`         | Device model runs on.                                                                                          | cpu, gpu              | cpu     |
 | `precision`      | Model precision.                                                                                               | fp32, fp16            | fp32    |
 | `client_workers` | Number of concurrent clients sending inference requests                                                        | integer               | 1       |
-| `hf_id`          | Hugging Face model ID. It needs to be public because we download the model from HuggingFace                    | eg. bert-base-uncased |         |
+| `id`             | Hugging Face model ID to download. For local models ID is used as unique model identfier.                      | eg. bert-base-uncased |         |
 | `batch_size`     | Batch size for sending inference requests. Many model have max batch size of 4                                 | usually from 1 to 4   | 1       |
 | `instance_count` | How many instances of ML model to create. More instances can help with throughput but require more HW resource | 1 or few              | 1       |
 
