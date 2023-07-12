@@ -1,5 +1,6 @@
 # Here we build docker images that are used by the exporter to generate different model formats and
 # optimize the models
+# Note: if running on Mac M1/M2 you might need to comment out the `openvino` in optimum/Dockerfile.cpu
 #!/bin/bash
 
 SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )

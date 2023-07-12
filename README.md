@@ -20,6 +20,7 @@ HuggingBench is an extensible, open-source MLOps tool for experimenting around s
 This was started as a hobby project to learn & explore various ML models and respective model servers. It is still in early days so might be 🐞.
 We definitevly plan to improve the tool so please stay tuned. We are happy to get your feedback so feel free to report problems, wishes, etc..
 
+
 # 📋 Requirements
 
 Python 3.9 or 3.10 is required.
@@ -37,6 +38,8 @@ from here https://github.com/NVIDIA/nvidia-container-toolkit#getting-started
 
 
 # 🏃 Quickstart
+
+Note that currently the tool runs only locally meaning it runs on the system where the experiments are performed.
 
 Clone the repo:
 
@@ -74,6 +77,13 @@ charts exported in JPEG. You can find the results below.
 
 # 💡 How it works
 
+**HuggingBench Design Principles**:
+
+* **Extensibility**: Easily incorporate new model servers, model formats, optimization techniques, and workloads for evaluation and comparison, allowing for flexibility and inclusion of current and future industry options across different hardware.
+* **Reproducibility**: Ensure that the benchmark can be reproduced reliably based on the provided specification.
+* **Production-Fidelity**: Strive to closely replicate the production environment, encompassing workload generation, model optimization, and server configuration options within the benchmark
+
+
 ![HuggingBench Architecture](./docs/huggingbench-arch.png?raw=true "HuggingBench Architecture")
 
 HuggingBench can be extended with an additional inference servers by implementing the Plugin. At the
@@ -104,6 +114,16 @@ we want to benchmark:
 | `instance_count` | How many instances of ML model to create. More instances can help with throughput but require more HW resource | 1 or few              | 1       |
 
 Experiments are cartesian product of all given CLI arguments. For example if we provide `--format onnx openvino` and `--client_workers 1 2 4` we will generate 6 experiments: [[onnx, 1], [onnx,2], [onnx,4], [openvino, 1], [openvino, 2], [openvino, 4]].
+
+### Local models
+
+In case you want to run model that is not available on HuggingFace Hub you can point the tool to a folder containing the model.
+Model has to be in PyTorch format along with `config.json` file (https://huggingface.co/docs/transformers/main_classes/configuration , you can use HuggingFace librares to generate `config.json` from model). The `--task` must be given when using local models as it can not be infered.
+Note that we also have to provide `--id` since we use it to generate unique model identifier when tracking metrics.
+
+Here is an example of running experiments on a local model:
+
+```hbench triton --id my-tiny-bert --model_local_path /home/unsigned/temp/tiny/ --task question-answering```
 
 
 ## 📊 Results

@@ -51,7 +51,7 @@ def add_common_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--model_local_path",
         default=None,
-        help="Path of model to benchmark. In this case we will not download model from HuggingFace Hub. You would still need to provide hf_id as we use it as a unique identifier for the model.",
+        help="Path of model to benchmark. Model has to be in PyTorch format and folder must contain `config.json`. You have to provide `--task` (can't be autodetected) and `--id`(since we use it as a unique identifier for the model).",
     )
     parser.add_argument("--task", default=None, help="Model tasks to benchmark. Only used with --model_local_path")
 

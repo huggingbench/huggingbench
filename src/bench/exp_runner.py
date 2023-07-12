@@ -29,6 +29,7 @@ class ExperimentRunner:
         failed_exp = []
         for spec in self.experiments:
             try:
+                server = None
                 model = self.plugin.model(spec)
                 server = self.plugin.server(spec, model)
                 server.start()
@@ -45,21 +46,25 @@ class ExperimentRunner:
                 success = False
                 failed_exp.append(spec)
             finally:
-                server.stop()
+                if server:
+                    server.stop()
             if success:
                 df = self.process_results(spec, stats, self.plugin.get_name())
                 self.chart_gen.add_data(df)
         tabulate_cols = ChartGen.labels + ["avg", "median", "90_percentile"]
         if len(failed_exp) > 0:
             print(f"NOTE! Following experiments have failed:\n {failed_exp}")
-        print(tabulate(self.chart_gen.data[tabulate_cols], headers="keys", tablefmt="psql", showindex="never"))
-        out_dir = (
-            self.experiments[0].workspace_dir + "/" + self.plugin.get_name()
-        )  # all experiments have the same workspace_dir
-        os.makedirs(out_dir, exist_ok=True)
-        self.chart_gen.plot_charts(
-            output_dir=out_dir, model_id=self.experiments[0].hf_id
-        )  # all experiments have the same hf_id
+        if self.chart_gen.data is not None:
+            print(tabulate(self.chart_gen.data[tabulate_cols], headers="keys", tablefmt="psql", showindex="never"))
+            out_dir = (
+                self.experiments[0].workspace_dir + "/" + self.plugin.get_name()
+            )  # all experiments have the same workspace_dir
+            os.makedirs(out_dir, exist_ok=True)
+            self.chart_gen.plot_charts(
+                output_dir=out_dir, model_id=self.experiments[0].hf_id
+            )  # all experiments have the same hf_id
+        else:
+            print("Something went wrong! No data to plot!")
 
     def process_results(self, spec: ExperimentSpec, stats: RunnerStats, plugin: str) -> pd.DataFrame:
         # Calculate percentiles and append to csv
