@@ -1,31 +1,52 @@
 # Here we build docker images that are used by the exporter to generate different model formats and
-# optimize the models
-# Note: if running on Mac M1/M2 you might need to comment out the `openvino` in optimum/Dockerfile.cpu
+# optimize the models. We currently support GPU, Intel CPU and Apple M1/M2 architectures.
 #!/bin/bash
 
 SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
-while true; do
+if [[ $(uname -m) == 'arm64' ]]; then
+  MAC=true
+else
+    MAC=false
+fi
 
-read -p "Do you have a dedicated GPU/cuda? (y/n)" yn
 
-case $yn in 
-	[yY] ) GPU=true;
-		break;;
-	[nN] ) GPU=false;
-		break;;
-	* ) echo invalid response;;
-esac
+if [ "$MAC" = false ] ; then
 
-done
+    while true; do
+
+    read -p "Do you have a dedicated GPU with NVidia CUDA drivers? (y/n)" yn
+
+    case $yn in 
+        [yY] ) GPU=true;
+            break;;
+        [nN] ) GPU=false;
+            break;;
+        * ) echo invalid response;;
+    esac
+
+    done
+
+else
+    GPU=false
+fi
+
 
 if [ "$GPU" = true ] ; then
     echo "Building GPU Huggingface Optimum image"
     docker build -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.gpu $SCRIPT_PATH/optimum/
+    echo "Building OpenVINO image"
+    docker build -t openvino $SCRIPT_PATH/openvino/
+elif [ "$MAC" = false ] ; then
+    echo "Building Apple M1/M2 Huggingface Optimum image"
+    docker build -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.cpu $SCRIPT_PATH/optimum/
+    echo "Building OpenVINO image"
+    docker build -t openvino $SCRIPT_PATH/openvino/   
 else
     echo "Building CPU Huggingface Optimum image"
-    docker build -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.cpu $SCRIPT_PATH/optimum/
+    docker build -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.cpu.arm64 $SCRIPT_PATH/optimum/
+    echo "Can't build OpenVINO image on Apple M1/M2 architecture" 
 fi
 
-docker build -t openvino $SCRIPT_PATH/openvino/
+echo "Building Polygraphy image"
 docker build -t polygraphy $SCRIPT_PATH/polygraphy/
