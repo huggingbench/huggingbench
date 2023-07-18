@@ -122,13 +122,15 @@ Experiments are cartesian product of all given CLI arguments. For example if we 
 ### 🏘️ Local models
 
 In case you want to run model that is not available on HuggingFace Hub you can point the tool to a folder containing the model.
-Model has to be in PyTorch format along with `config.json` file (https://huggingface.co/docs/transformers/main_classes/configuration , you can use HuggingFace librares to generate `config.json` from model). The `--task` must be given when using local models as it can not be infered.
+Current limitation is that the model has to be in PyTorch format that uses HF Transformers API (meaning your model is extening `PreTrainedModel` instead of `nn.Module`). The `config.json` file has to be present as well since `Optimum` library needs it (you can use HuggingFace librares to generate `config.json` from the model). 
+The `--task` must be given when using local models as it can not be infered.
 Note that we also have to provide `--id` since we use it to generate unique model identifier when tracking metrics.
 
-Here is an example of running experiments on a local model:
+Here is an example of running experiments on a PyTorch model with Transofrmers:
 
 ```hbench triton --id my-tiny-bert --model_local_path /home/unsigned/temp/tiny/ --task question-answering```
 
+NOTE: There is ongoing work to support not only PyTorch models that use Transformers API but any PyTorch or TensorFlow model.
 
 ## 📊 Results
 
