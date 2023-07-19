@@ -3,16 +3,18 @@
 [![HuggingBench](https://github.com/legobench/huggingbench/actions/workflows/main.yml/badge.svg?branch=main&event=push)](https://github.com/legobench/huggingbench/actions/workflows/main.yml)
 
 # HuggingBench
+**  🚧 Project is in Alpha stage 🚧  **
 
 <div align="center">
     <img src="./docs/huggingbench-logo.jpg" height="200" alt="HuggingBench">
 </div>
 
-<h3 align="center">Benchmark and experiment with ML model serving</h3>
+<h3 align="center">Benchmark and experiment with HuggingFace model serving <br>🚧 Project is in Alpha stage 🚧</h3>
+
 
 # 🤖 Introduction
 
-HuggingBench is an extensible, open-source MLOps tool for experimenting around serving ML models. By running one command from terminal the tool generates various model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completition. This should save time when looking for an optimal model serving cofiguration or just help with understanding latency/throughput and hardware needs for serving the model.
+HuggingBench is an extensible, open-source MLOps tool for experimenting around serving [HuggingFace models](https://huggingface.co/models). By running one command from terminal the tool generates various model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completition. This should save time when looking for an optimal model serving cofiguration or just help with understanding latency/throughput and hardware needs for serving the model.
 
 **HuggingBench Design Principles**:
 
@@ -23,7 +25,7 @@ HuggingBench is an extensible, open-source MLOps tool for experimenting around s
 
 ## 📝 Note
 
-This was started as a hobby project to learn & explore various ML models and respective model servers. It is still in early days so might be 🐞.
+This was started as a hobby project to learn & explore various HF models and respective model servers. It is still in early days so might be 🐞.
 We definitevly plan to improve the tool so please stay tuned. We are happy to get your feedback so feel free to report problems, wishes, etc..
 
 
@@ -130,7 +132,7 @@ Here is an example of running experiments on a PyTorch model with Transofrmers:
 
 ```hbench triton --id my-tiny-bert --model_local_path /home/unsigned/temp/tiny/ --task question-answering```
 
-NOTE: There is ongoing work to support not only PyTorch models that use Transformers API but any PyTorch or TensorFlow model.
+NOTE: There is ongoing work to support not only PyTorch models that use Transformers API but any PyTorch or Ten sorFlow model.
 
 ## 📊 Results
 
@@ -184,6 +186,7 @@ Charts showing few metrics while benchmarking `bert-base-uncased` deployed on Tr
 To be able to easily add more inference servers and compare across, HuggingBench uses Plugin architecture. Each inference server
 becomes a plugin and needs to implement classes defined in [plugin.py](./src/bench/plugin.py). Check out [triton plugin](./src/plugins/triton/) for an example of plugin implementation.
 
+Note that currently plugin requirements are added into project requirements. Project and plugin requirements will be separated in the future.
 
 # 📖 More Examples
 
