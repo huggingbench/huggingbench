@@ -13,7 +13,7 @@ from server.util import ENV_TRITON_SERVER_DOCKER
 
 def test_experiment_runner():
     experiment = ExperimentSpec(
-        hf_id="prajjwal1/bert-tiny", format="onnx", device="cpu", precision="fp32", batch_size=1, workspace_dir="./temp"
+        id="prajjwal1/bert-tiny", format="onnx", device="cpu", precision="fp32", batch_size=1, workspace_dir="./temp"
     )  # given model only supports batch size 1
     os.environ[
         ENV_TRITON_SERVER_DOCKER

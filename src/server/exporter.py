@@ -22,7 +22,7 @@ class ModelExporter:
         inputs = hf_model_input(
             onnx_model_info.model_file_path(),
             half=onnx_model_info.half(),
-            custom_shape_map={"batch_size": self.spec.batch_size},
+            custom_shape_map={"batch_size": self.spec.batch_size, "sequence_length": self.spec.sequence_length},
         )
         outputs = hf_model_output(
             onnx_model_info.model_file_path(),
@@ -44,7 +44,7 @@ class ModelExporter:
         LOG.info(PRINT_HEADER % " ONNX EXPORT ")
 
         onnx_model_info = ModelInfo(
-            self.spec.hf_id,
+            self.spec.id,
             self.spec.task,
             Format(
                 "onnx",
@@ -65,7 +65,7 @@ class ModelExporter:
         model_dir = onnx_model_info.model_dir()
         os.makedirs(model_dir, exist_ok=True)
 
-        model_arg = f"--model={self.spec.hf_id}" if model_input is None else f"--model=/model_input"
+        model_arg = f"--model={self.spec.id}" if model_input is None else f"--model=/model_input"
 
         cmd = [
             "optimum-cli",
@@ -100,7 +100,7 @@ class ModelExporter:
     def _export_onnx2openvino(self, onnx_model_info: ModelInfo):
         LOG.info(PRINT_HEADER % " ONNX 2 OPENVINO CONVERSION ")
         ov_model_info = ModelInfo(
-            onnx_model_info.hf_id,
+            onnx_model_info.id,
             onnx_model_info.task,
             format=Format("openvino", origin=onnx_model_info.format),
             base_dir=self.base_dir,
@@ -144,7 +144,7 @@ class ModelExporter:
         LOG.info(PRINT_HEADER % " ONNX 2 TRT CONVERSION ")
 
         trt_onnx_model_info = ModelInfo(
-            onnx_model_info.hf_id,
+            onnx_model_info.id,
             onnx_model_info.task,
             Format("trt", origin=onnx_model_info.format),
             self.base_dir,

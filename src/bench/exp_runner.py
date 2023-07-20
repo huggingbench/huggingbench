@@ -34,10 +34,8 @@ class ExperimentRunner:
                 server = self.plugin.server(spec, model)
                 server.start()
                 client = self.plugin.client(spec, model)
-                runner_config = RunnerConfig(batch_size=spec.batch_size, workers=spec.client_workers)
-                client_runner = Runner(
-                    runner_config, client, self._dataset_or_random(spec.dataset_id, model.input_shape)
-                )
+                runner_config = RunnerConfig(batch_size=spec.batch_size, workers=spec.clients)
+                client_runner = Runner(runner_config, client, self._dataset_or_random(spec.dataset, model.input_shape))
                 success = False
                 stats = client_runner.run()
                 success = True
@@ -61,8 +59,8 @@ class ExperimentRunner:
             )  # all experiments have the same workspace_dir
             os.makedirs(out_dir, exist_ok=True)
             self.chart_gen.plot_charts(
-                output_dir=out_dir, model_id=self.experiments[0].hf_id
-            )  # all experiments have the same hf_id
+                output_dir=out_dir, model_id=self.experiments[0].id
+            )  # all experiments have the same id
         else:
             print("Something went wrong! No data to plot!")
 
@@ -72,13 +70,11 @@ class ExperimentRunner:
         median = np.median(exec_times)
         avg = np.average(exec_times)
         percentile_90 = np.percentile(exec_times, 90)
-        percentile_99 = np.percentile(exec_times, 99)
         res_dict = {
-            "success_rate": stats.success_rate,
+            "throughput": stats.success_rate,
             "avg": avg,
             "median": median,
             "90_percentile": percentile_90,
-            "99_percentile": percentile_99,
         }
         info = vars(spec)
         data = {**info, **res_dict, "plugin": plugin}

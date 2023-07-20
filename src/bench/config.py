@@ -8,16 +8,16 @@ TEMP_MODEL_REPO_DIR = f"{TEMP_DIR}/model_repository"
 
 @dataclass
 class ExperimentSpec:
-    hf_id: str
+    id: str
     format: str
     device: str
     task: str = None
     batch_size: int = 1
     sequence_length: int = 100
-    client_workers: int = 1
-    instance_count: int = 1
+    clients: int = 1
+    instances: int = 1
     model_local_path: str = None
-    dataset_id: str = "random"  # if not set we generate random data
+    dataset: str = "random"  # if not set we generate random data
     precision: str = "fp32"  # allowed values are fp32, fp16, int8
     extra_params: dict = field(default_factory=dict)  # extra parameters to pass to the model
     workspace_dir: str = TEMP_DIR
@@ -36,19 +36,20 @@ class ExperimentSpec:
 
     def metric_tags(self):
         return {
-            "hf_id": self.hf_id,
+            "id": self.id,
             "task": self.task if self.task else "",
             "format": self.format,
             "device": self.device,
             "precision": self.precision,
             "batch_size": str(self.batch_size),
             "sequence_length": str(self.sequence_length),
-            "client_workers": str(self.client_workers),
-            "dataset_id": self.dataset_id,
+            "client_workers": str(self.clients),
+            "dataset": self.dataset,
+            "insances": str(self.instances),
         }
 
     def get_csv_output_path(self, base_dir):
-        return os.path.join(base_dir, get_os_friendly_path(self.hf_id) + ".csv")
+        return os.path.join(base_dir, get_os_friendly_path(self.id) + ".csv")
 
 
 @dataclass
