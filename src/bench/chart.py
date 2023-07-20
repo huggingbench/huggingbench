@@ -17,11 +17,12 @@ class ChartGen:
         "device",
         "precision",
         "batch_size",
-        "client_workers",
-        "instance_count",
-        "success_rate",
-        "dataset_id",
-        "hf_id",
+        "clients",
+        "instances",
+        "sequence_length",
+        "throughput",
+        "dataset",
+        "id",
     ]
 
     def __init__(self):
@@ -48,11 +49,11 @@ class ChartGen:
         ax.set_title(f"Comparison of {chart_name}", loc="left")
 
         for i, label_val in enumerate(labels.values):
-            success_rate = "{:.2f}".format(label_val[6])
+            success_rate = "{:.2f}".format(label_val[7])
             ax.text(
                 i,
                 chart_data[i],
-                f"format={label_val[0]}\ndevice={label_val[1]}\nprecision={label_val[2]}\nbatch_size={label_val[3]}\nclient_workers={label_val[4]}\ninstance_count={label_val[5]}\nsucc-rate={success_rate}\ndataset={label_val[7]}\nhf_id={label_val[8]}",
+                f"format={label_val[0]}\ndevice={label_val[1]}\nprecision={label_val[2]}\nbatch_size={label_val[3]}\nclients={label_val[4]}\ninstances={label_val[5]}\nsequence_length={label_val[6]} \nthroughput={success_rate}\ndataset={label_val[8]}\nid={label_val[9]}",
                 ha="center",
                 va="bottom",
                 fontsize=8,
@@ -74,14 +75,12 @@ class ChartGen:
         labels = df[ChartGen.labels]
         median_latencies = df["median"]
         percentile90_latencies = df["90_percentile"]
-        percentile99_latencies = df["99_percentile"]
-        throughputs = df["success_rate"]
+        throughputs = df["throughput"]
         avg_latencies = df["avg"]
 
         charts = {
             "median_latencies": median_latencies,
             "90_percentile_latencies": percentile90_latencies,
-            "99_percentile_latencies": percentile99_latencies,
             "throughputs": throughputs,
             "avg_latencies": avg_latencies,
         }

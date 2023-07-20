@@ -38,6 +38,7 @@ def add_common_args(parser: argparse.ArgumentParser):
         help="Number of client workers sending concurrent requests to the server.",
     )
     parser.add_argument("--batch_size", default=[1], nargs="*", type=int, help="Batch size(s) to use for inference..")
+    parser.add_argument("--sequence_length", default=[100], nargs="*", type=int, help="Sequence length(s) to use.")
     parser.add_argument("--instance_count", default=[1], nargs="*", help="ML model instance count.")
     parser.add_argument(
         "--workspace", default=TEMP_DIR, help="Directory holding model configuration and experiment results"
@@ -46,7 +47,7 @@ def add_common_args(parser: argparse.ArgumentParser):
         "--dataset_id",
         default="random",
         choices=MODEL_DATASET.keys(),
-        help="HuggingFace dataset ID to use for benchmarking. By default we generate random dataset.",
+        help="HuggingFace Dataset ID to use for benchmarking. By default we generate random dataset.",
     )
     parser.add_argument(
         "--model_local_path",
@@ -91,6 +92,7 @@ def run(args):
     model_local_path = args.model_local_path
     task = args.task
     batch_size = args.batch_size
+    sequence_length = args.sequence_length
     instance_count = args.instance_count
     workspace_dir = args.workspace
     dataset_id = args.dataset_id
@@ -104,25 +106,27 @@ def run(args):
             for p in precisions:
                 for w in client_workers:
                     for b in batch_size:
-                        for i in instance_count:
-                            experiment = ExperimentSpec(
-                                hf_id=hf_id,
-                                task=task,
-                                model_local_path=model_local_path,
-                                format=f,
-                                device=d,
-                                precision=p,
-                                client_workers=w,
-                                batch_size=b,
-                                instance_count=i,
-                                workspace_dir=workspace_dir,
-                                dataset_id=dataset_id,
-                            )
-                            if experiment.is_valid():
-                                LOG.info(f"Adding valid experiment: {experiment}")
-                                experiments.append(experiment)
-                            else:
-                                LOG.warning(f"Skipping invalid experiment: {experiment}")
+                        for s in sequence_length:
+                            for i in instance_count:
+                                experiment = ExperimentSpec(
+                                    id=hf_id,
+                                    task=task,
+                                    model_local_path=model_local_path,
+                                    format=f,
+                                    device=d,
+                                    precision=p,
+                                    clients=w,
+                                    batch_size=b,
+                                    sequence_length=s,
+                                    instances=i,
+                                    workspace_dir=workspace_dir,
+                                    dataset=dataset_id,
+                                )
+                                if experiment.is_valid():
+                                    LOG.info(f"Adding valid experiment: {experiment}")
+                                    experiments.append(experiment)
+                                else:
+                                    LOG.warning(f"Skipping invalid experiment: {experiment}")
 
         ExperimentRunner(
             triton_plugin,
