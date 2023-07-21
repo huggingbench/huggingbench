@@ -100,7 +100,7 @@ class ModelExporter:
     def _export_onnx2openvino(self, onnx_model_info: ModelInfo):
         LOG.info(PRINT_HEADER % " ONNX 2 OPENVINO CONVERSION ")
         ov_model_info = ModelInfo(
-            onnx_model_info.id,
+            onnx_model_info.hf_id,
             onnx_model_info.task,
             format=Format("openvino", origin=onnx_model_info.format),
             base_dir=self.base_dir,
@@ -140,11 +140,11 @@ class ModelExporter:
         run_docker_sdk(image_name="openvino", docker_args=cmd)
         return ov_model_info
 
-    def _export_onnx2trt(self, onnx_model_info):
+    def _export_onnx2trt(self, onnx_model_info: ModelInfo):
         LOG.info(PRINT_HEADER % " ONNX 2 TRT CONVERSION ")
 
         trt_onnx_model_info = ModelInfo(
-            onnx_model_info.id,
+            onnx_model_info.hf_id,
             onnx_model_info.task,
             Format("trt", origin=onnx_model_info.format),
             self.base_dir,
