@@ -40,8 +40,11 @@ on your system.
 
 ## GPU support (optional)
 
+Your host system must have CUDA drivers installed (https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html)
+
 To enable GPU acceleration for Docker containers running on NVidia GPU please follow the instructions
-from here https://github.com/NVIDIA/nvidia-container-toolkit#getting-started
+from here https://www.ibm.com/docs/en/maximo-vi/8.3.0?topic=planning-installing-docker-nvidia-docker2#install_ub
+
 
 ## Mac M1/M2
 
@@ -56,7 +59,7 @@ Clone the repo:
 
 ```git clone https://github.com/legobench/huggingbench.git```
 
-Build all required Docker images used for converting and optimizing models:
+Build all required Docker images used for converting and optimizing models (NOTE: make sure that your current user is part of `docker` user group before running the script below: `sudo usermod -aG docker $USER`):
 
 ```./docker/build-all.sh```
 
@@ -69,13 +72,14 @@ source env/bin/activate
 
 Install dependencies and the project:
 
-```pip install -e .```
+```pip install -e . --extra-index-url https://pypi.ngc.nvidia.com```
 
 Pull Nvidia Triton server Docker image used by the Triton Plugin:
 
 ```docker pull nvcr.io/nvidia/tritonserver:23.04-py3```
 
-(NOTE: if you are running with GPU/CUDA you might want to make sure that your host intsalled CUDA drivers are compatible with the ones provided in the container)
+(NOTE: if you are running with GPU/CUDA you might want to make sure that your host intsalled CUDA drivers are compatible with the ones provided in the container. The container uses Nvidia 530.30 drivers. If you have Nvidia 
+package repository added, to install compatible version on Ubuntu you can just run: `sudo apt install nvidia-driver-530`)
 
 Run command to see how client concurreny affects serving of HuggingFace model https://huggingface.co/prajjwal1/bert-tiny on NVidia Triton Inference server:
 

@@ -34,19 +34,19 @@ fi
 
 if [ "$GPU" = true ] ; then
     echo "Building GPU Huggingface Optimum image"
-    docker build -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.gpu $SCRIPT_PATH/optimum/
+    docker build --network=host -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.gpu $SCRIPT_PATH/optimum/
     echo "Building OpenVINO image"
-    docker build -t openvino $SCRIPT_PATH/openvino/
+    docker build --network=host -t openvino $SCRIPT_PATH/openvino/
 elif [ "$MAC" = false ] ; then
-    echo "Building Apple M1/M2 Huggingface Optimum image"
-    docker build -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.cpu $SCRIPT_PATH/optimum/
-    echo "Building OpenVINO image"
-    docker build -t openvino $SCRIPT_PATH/openvino/   
-else
     echo "Building CPU Huggingface Optimum image"
-    docker build -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.cpu.arm64 $SCRIPT_PATH/optimum/
+    docker build --network=host -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.cpu $SCRIPT_PATH/optimum/
+    echo "Building OpenVINO image"
+    docker build --network=host -t openvino $SCRIPT_PATH/openvino/   
+else
+    echo "Building Apple M1/M2 Huggingface Optimum image"
+    docker build --network=host -t optimum -f $SCRIPT_PATH/optimum/Dockerfile.cpu.arm64 $SCRIPT_PATH/optimum/
     echo "Can't build OpenVINO image on Apple M1/M2 architecture" 
 fi
 
 echo "Building Polygraphy image"
-docker build -t polygraphy $SCRIPT_PATH/polygraphy/
+docker build --network=host -t polygraphy $SCRIPT_PATH/polygraphy/
