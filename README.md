@@ -13,26 +13,27 @@
 
 # 🤖 Introduction
 
-HuggingBench is an extensible, open-source MLOps tool for experimenting around serving [HuggingFace models](https://huggingface.co/models). By running one command from terminal the tool generates various model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completition. This should save time when looking for an optimal model serving cofiguration or just help with understanding latency/throughput and hardware needs for serving the model.
+HuggingBench is an extensible, open-source MLOps tool for benchmarking [HuggingFace models](https://huggingface.co/models). With just a single terminal command, the tool generates multiple model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completion. 
+
+HuggingBench aims to make it easier and faster to find an optimal model serving configuration, while helping you better understand latency/throughput and hardware needs for serving the model. 
 
 **HuggingBench Design Principles**:
 
 * **Extensibility**: Easily incorporate new model servers, model formats, optimization techniques, and workloads for evaluation and comparison, allowing for flexibility and inclusion of current and future industry options across different hardware.
 * **Reproducibility**: Ensure that the benchmark can be reproduced reliably based on the provided specification.
-* **Production-Fidelity**: Strive to closely replicate the production environment, encompassing workload generation, model optimization, and server configuration options within the benchmark
+* **Production-Fidelity**: Strive to closely replicate the production environment, encompassing workload generation, model optimization, and server configuration options within the benchmark.
 
+## 📝 About HuggingBench
 
-## 📝 Note
-
-This was started as a hobby project to learn & explore various HF models and respective model servers. It is still in early days so might be 🐞.
-We definitevly plan to improve the tool so please stay tuned. We are happy to get your feedback so feel free to report problems, wishes, etc..
+This was started as a hobby project to learn & explore various HF models and respective model servers. It is still in early days and might be 🐞.
+Please stay tuned as we continue to improve the tool. We are happy to get your feedback so feel free to report problems, wishes, etc..
 
 
 # 📋 Requirements
 
 Python 3.9 or 3.10 is required.
 
-HuggingBench use Docker containers to run various inference servers so you should have Docker available
+HuggingBench uses Docker containers to run various inference servers so you should have Docker available
 on your system.
 
 * Instructions for installing Docker Engine on Ubuntu https://docs.docker.com/engine/install/ubuntu/
@@ -42,7 +43,7 @@ on your system.
 
 Your host system must have CUDA drivers installed (https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html)
 
-To enable GPU acceleration for Docker containers running on NVidia GPU please follow the instructions
+To enable GPU acceleration for Docker containers running on Nvidia GPU please follow the instructions
 from here https://www.ibm.com/docs/en/maximo-vi/8.3.0?topic=planning-installing-docker-nvidia-docker2#install_ub
 
 
@@ -78,16 +79,16 @@ Pull Nvidia Triton server Docker image used by the Triton Plugin:
 
 ```docker pull nvcr.io/nvidia/tritonserver:23.04-py3```
 
-(NOTE: if you are running with GPU/CUDA you might want to make sure that your host intsalled CUDA drivers are compatible with the ones provided in the container. The container uses Nvidia 530.30 drivers. If you have Nvidia 
+(NOTE: if you are running with GPU/CUDA you might want to make sure that your host installed CUDA drivers are compatible with the ones provided in the container. The container uses Nvidia 530.30 drivers. If you have Nvidia 
 package repository added, to install compatible version on Ubuntu you can just run: `sudo apt install nvidia-driver-530`)
 
-Run command to see how client concurreny affects serving of HuggingFace model https://huggingface.co/prajjwal1/bert-tiny on NVidia Triton Inference server:
+Run command to see how client concurrency affects serving of HuggingFace model https://huggingface.co/prajjwal1/bert-tiny on Nvidia Triton Inference server:
 
 ```hbench triton --id prajjwal1/bert-tiny --client_workers 1 2 4```
 
 Above command will generate 3 experiments: first with 1 concurrent client, then 2 and 4. Each experiment will spin
-up a docker container with Triton server, deploy the model with the right configuration and generate the load
-by sending inference requests. Upon completion metric table will be presented in the terminal along with the 
+up a Docker container with Triton server, deploy the model with the right configuration and generate the load
+by sending inference requests. Upon completion, metric table will be presented in the terminal along with 
 charts exported in JPEG. You can find the results below. In the example above the tool will automatically download
 the model from HuggingFace Hub.
 
@@ -95,13 +96,13 @@ the model from HuggingFace Hub.
 
 ![HuggingBench Architecture](./docs/huggingbench-arch.png?raw=true "HuggingBench Architecture")
 
-HuggingBench can be extended with an additional inference servers by implementing the Plugin. At the
-moment NVidia Triton server is only supported but more are coming soon. We also encourage you to contribute
-and help us make HugggingBench better (more on plugins [here](#plugins))!
+HuggingBench can be extended with additional inference servers by implementing the Plugin. At the
+moment, Nvidia Triton server is only supported, but more are coming soon. We also encourage you to contribute
+and help us make HuggingBench better (more on plugins [here](#plugins))!
 
 
-Docker containers are used a lot to helps us avoid dependency hell: no need to manually
-install the right depenendencies thus reducing the friction. Two main use cases covered by
+Docker containers are used a lot to help us avoid dependency hell: no need to manually
+install the right dependencies thus reducing friction. Two main use cases covered by
 Docker containers: (1) converting and optimizing the model (2) inference server for model serving.
 Note that the actual model and it's configuration is stored on host disk under configured `workspace` 
 folder and shared(bind) with respective Docker containers. 
@@ -128,15 +129,15 @@ Experiments are cartesian product of all given CLI arguments. For example if we 
 ### 🏘️ Local models
 
 In case you want to run model that is not available on HuggingFace Hub you can point the tool to a folder containing the model.
-Current limitation is that the model has to be in PyTorch format that uses HF Transformers API (meaning your model is extening `PreTrainedModel` instead of `nn.Module`). The `config.json` file has to be present as well since `Optimum` library needs it (you can use HuggingFace librares to generate `config.json` from the model). 
-The `--task` must be given when using local models as it can not be infered.
-Note that we also have to provide `--id` since we use it to generate unique model identifier when tracking metrics.
+Current limitation is that the model has to be in PyTorch format that uses HF Transformers API (meaning your model is extending `PreTrainedModel` instead of `nn.Module`). The `config.json` file has to be present as well since `Optimum` library needs it (you can use HuggingFace libraries to generate `config.json` from the model). 
+The `--task` must be given when using local models as it can not be inferred.
+Note that we also have to provide `--id` since we use it to generate a unique model identifier when tracking metrics.
 
-Here is an example of running experiments on a PyTorch model with Transofrmers:
+Here is an example of running experiments on a PyTorch model with Transformers:
 
 ```hbench triton --id my-tiny-bert --model_local_path /home/unsigned/temp/tiny/ --task question-answering```
 
-NOTE: There is ongoing work to support not only PyTorch models that use Transformers API but any PyTorch or Ten sorFlow model.
+NOTE: There is ongoing work to support not only PyTorch models that use Transformers API but any PyTorch or TensorFlow model.
 
 ## 📊 Results
 
@@ -185,7 +186,7 @@ Charts showing few metrics while benchmarking `bert-base-uncased` deployed on Tr
 
 ## 🔌 Plugins
 
-To be able to easily add more inference servers and compare across, HuggingBench uses Plugin architecture. Each inference server
+To be able to easily add more inference servers and compare across them, HuggingBench uses Plugin architecture. Each inference server
 becomes a plugin and needs to implement classes defined in [plugin.py](./src/bench/plugin.py). Check out [triton plugin](./src/plugins/triton/) for an example of plugin implementation.
 
 Note that currently plugin requirements are added into project requirements. Project and plugin requirements will be separated in the future.

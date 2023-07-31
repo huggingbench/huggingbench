@@ -56,7 +56,7 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
     exit_code = container.wait()
     t.join()
     if exit_code["StatusCode"] != 0:
-        raise Exception(f"Container failed {exit_code}")
+        raise Exception(f"Container failed {exit_code}. Check log output for failure reason(s)")
     LOG.info(f"Docker container exit code {exit_code}")
     return exit_code
 
@@ -129,3 +129,19 @@ def format_dtype(dtype):
         return "FP16"
     else:
         return dtype
+
+
+HF_TOKEN_ENV = "HUGGING_FACE_HUB_TOKEN"
+HF_TOKEN_FILE = os.getenv("HOME") + "/.cache/huggingface/token"
+
+
+def hf_token() -> str:
+    token = None
+    token_exists = os.path.isfile(HF_TOKEN_FILE)
+    if token_exists:
+        with open(HF_TOKEN_FILE) as f:
+            token = f.read()
+    else:
+        token = os.getenv(HF_TOKEN_ENV)
+
+    return token

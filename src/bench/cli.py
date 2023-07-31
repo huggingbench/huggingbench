@@ -39,7 +39,7 @@ def add_common_args(parser: argparse.ArgumentParser):
     )
     parser.add_argument("--batch_size", default=[1], nargs="*", type=int, help="Batch size(s) to use for inference..")
     parser.add_argument("--sequence_length", default=[100], nargs="*", type=int, help="Sequence length(s) to use.")
-    parser.add_argument("--instance_count", default=[1], nargs="*", help="ML model instance count.")
+    parser.add_argument("--instance_count", default=[1], nargs="*", type=int, help="ML model instance count.")
     parser.add_argument(
         "--workspace", default=TEMP_DIR, help="Directory holding model configuration and experiment results"
     )

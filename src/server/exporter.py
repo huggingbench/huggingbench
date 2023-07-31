@@ -2,7 +2,7 @@ import logging
 import os
 
 from bench.config import ExperimentSpec, Format, ModelInfo
-from server.util import PRINT_HEADER, hf_model_input, hf_model_output, run_docker_sdk
+from server.util import PRINT_HEADER, hf_model_input, hf_model_output, run_docker_sdk, hf_token, HF_TOKEN_ENV
 
 LOG = logging.getLogger(__name__)
 
@@ -77,7 +77,6 @@ class ModelExporter:
             f"--cache_dir={self.cache_dir}",
             f"--batch_size={self.spec.batch_size}",
             f"--sequence_length={self.spec.sequence_length}",
-            "--monolit",
             f"--atol={atol}",
         ]
 
@@ -92,8 +91,9 @@ class ModelExporter:
             cmd.append(f"--task={self.spec.task}")
 
         cmd.append(onnx_model_info.model_dir())
-
-        run_docker_sdk("optimum", model_dir, cmd, onnx_model_info.gpu_enabled(), model_input=model_input)
+        token = hf_token()
+        env = {HF_TOKEN_ENV: token} if token else None
+        run_docker_sdk("optimum", model_dir, cmd, onnx_model_info.gpu_enabled(), env=env, model_input=model_input)
 
         return onnx_model_info
 
