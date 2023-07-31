@@ -2,10 +2,12 @@
 FROM python:3.9
 
 RUN python -m pip install --upgrade pip --no-cache-dir 
-RUN python -m pip install transformers==4.29.2 --no-cache-dir 
-RUN python -m pip install optimum==1.8.5 --no-cache-dir 
-RUN python -m pip install optimum[onnxruntime]==1.8.5 --no-cache-dir 
-RUN python -m pip install optimum[openvino,nncf]==1.8.5 --no-cache-dir 
-RUN python -m pip install optimum[onnxruntime-gpu]==1.8.5 --no-cache-dir 
+RUN python -m pip install transformers==4.31.0 --no-cache-dir
+RUN python -m pip install huggingface-hub==0.16.4 --no-cache-dir
+RUN python -m pip install diffusers==0.19.1 --no-cache-dir
+RUN python -m pip install optimum==1.9.0 --no-cache-dir 
+RUN python -m pip install optimum[onnxruntime]==1.9.0 --no-cache-dir 
+RUN python -m pip install optimum[openvino,nncf]==1.9.0 --no-cache-dir 
+RUN python -m pip install optimum[onnxruntime-gpu]==1.9.0 --no-cache-dir 
 
 CMD []

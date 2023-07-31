@@ -2,7 +2,7 @@ import logging
 import os
 
 from bench.config import ExperimentSpec, Format, ModelInfo
-from server.util import PRINT_HEADER, hf_model_input, hf_model_output, run_docker_sdk
+from server.util import PRINT_HEADER, hf_model_input, hf_model_output, run_docker_sdk, hf_token, HF_TOKEN_ENV
 
 LOG = logging.getLogger(__name__)
 
@@ -77,7 +77,6 @@ class ModelExporter:
             f"--cache_dir={self.cache_dir}",
             f"--batch_size={self.spec.batch_size}",
             f"--sequence_length={self.spec.sequence_length}",
-            "--monolit",
             f"--atol={atol}",
         ]
 
@@ -92,15 +91,16 @@ class ModelExporter:
             cmd.append(f"--task={self.spec.task}")
 
         cmd.append(onnx_model_info.model_dir())
-
-        run_docker_sdk("optimum", model_dir, cmd, onnx_model_info.gpu_enabled(), model_input=model_input)
+        token = hf_token()
+        env = {HF_TOKEN_ENV: token} if token else None
+        run_docker_sdk("optimum", model_dir, cmd, onnx_model_info.gpu_enabled(), env=env, model_input=model_input)
 
         return onnx_model_info
 
     def _export_onnx2openvino(self, onnx_model_info: ModelInfo):
         LOG.info(PRINT_HEADER % " ONNX 2 OPENVINO CONVERSION ")
         ov_model_info = ModelInfo(
-            onnx_model_info.id,
+            onnx_model_info.hf_id,
             onnx_model_info.task,
             format=Format("openvino", origin=onnx_model_info.format),
             base_dir=self.base_dir,
@@ -140,11 +140,11 @@ class ModelExporter:
         run_docker_sdk(image_name="openvino", docker_args=cmd)
         return ov_model_info
 
-    def _export_onnx2trt(self, onnx_model_info):
+    def _export_onnx2trt(self, onnx_model_info: ModelInfo):
         LOG.info(PRINT_HEADER % " ONNX 2 TRT CONVERSION ")
 
         trt_onnx_model_info = ModelInfo(
-            onnx_model_info.id,
+            onnx_model_info.hf_id,
             onnx_model_info.task,
             Format("trt", origin=onnx_model_info.format),
             self.base_dir,
