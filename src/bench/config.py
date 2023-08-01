@@ -35,9 +35,8 @@ class ExperimentSpec:
         return True
 
     def metric_tags(self):
-        return {
+        tags = {
             "id": self.id,
-            "task": self.task if self.task else "",
             "format": self.format,
             "device": self.device,
             "precision": self.precision,
@@ -46,7 +45,9 @@ class ExperimentSpec:
             "client_workers": str(self.clients),
             "dataset": self.dataset,
             "insances": str(self.instances),
+            "task": self.task if self.task else "autodetect",
         }
+        return tags
 
     def get_csv_output_path(self, base_dir):
         return os.path.join(base_dir, get_os_friendly_path(self.id) + ".csv")

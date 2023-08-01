@@ -16,6 +16,7 @@ class TritonPlugin(Plugin, name="triton"):
             "localhost:{}".format(triton_config.http_port),
             model.unique_name(),
             max_paralell_requests=spec.clients,
+            metric_tags=spec.metric_tags(),
         )
         return triton_client
 

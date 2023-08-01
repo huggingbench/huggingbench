@@ -27,21 +27,23 @@ INPUT_KEY_DATATYPE = "datatype"
 
 
 class TritonClient(Client):
-    """Interacts with Triton server using HTTP"""
+    """Interacts with Triton server using HTTP."""
 
-    metric_infer_latency = Histogram(
-        "client_infer_latency", "Latency for inference in seconds", labelnames=["model", "batch_size"]
-    )
-    metric_infer_requests_success = Counter(
-        "client_infer_requests_success", "Number of successful inference requests", labelnames=["model", "batch_size"]
-    )
-    metric_infer_failed_requests = Counter(
-        "client_infer_requests_failed", "Number of failed inference requests", labelnames=["model", "batch_size"]
-    )
     metric_info = Info("client_info", "Information about the client")
+    metric_infer_latency = None
+    metric_infer_requests_success = None
+    metric_infer_requests_failure = None
+
     prom_started = False
 
-    def __init__(self, triton_url: str, model_name: str, max_paralell_requests: int = 10, prom_port: int = PROM_PORT):
+    def __init__(
+        self,
+        triton_url: str,
+        model_name: str,
+        max_paralell_requests: int = 10,
+        prom_port: int = PROM_PORT,
+        metric_tags: dict = None,
+    ):
         if triton_url is None:
             LOG.warning("Triton URL not provided. Running client in test mode")
             return
@@ -50,6 +52,7 @@ class TritonClient(Client):
         self.model = model_name
         self.model_version = MODEL_VERSION
         self.metric_info.info({"model": self.model})
+        self.metric_tags = metric_tags
         LOG.info("Creating triton client for server: %s", self._server_url)
         self.client = httpclient.InferenceServerClient(url=self._server_url, concurrency=max_paralell_requests)
         errors = self._server_check(self.client)
@@ -65,6 +68,21 @@ class TritonClient(Client):
         self.outputs = {tm["name"]: tm for tm in model_metadata["outputs"]}
 
         if not TritonClient.prom_started:
+            # metric_tags keys is never changing
+            # metric_tags is guaranteed not to change after the client is created so key/value order is guaranteed
+            TritonClient.metric_infer_latency = Histogram(
+                "client_infer_latency", "Latency for inference in seconds", labelnames=list(self.metric_tags.keys())
+            )
+            TritonClient.metric_infer_requests_success = Counter(
+                "client_infer_requests_success",
+                "Number of successful inference requests",
+                labelnames=list(self.metric_tags.keys()),
+            )
+            TritonClient.metric_infer_failed_requests = Counter(
+                "client_infer_requests_failed",
+                "Number of failed inference requests",
+                labelnames=list(self.metric_tags.keys()),
+            )
             LOG.info("Exposing client metrics on port %s", prom_port)
             start_http_server(prom_port)
             TritonClient.prom_started = True
@@ -80,11 +98,10 @@ class TritonClient(Client):
         """Runs inference on the triton server"""
         infer_inputs = self._prepare_infer_inputs(samples)
         infer_outputs = self._prepare_infer_outputs(self.outputs)
-        with self.metric_infer_latency.labels(self.model, len(samples)).time():
+        with self.metric_infer_latency.labels(*list(self.metric_tags.values())).time():
             if async_req:
                 return self._infer_with_metrics(
                     fn=self.client.async_infer,
-                    batch_size=len(samples),
                     **{
                         "model_name": self.model,
                         "model_version": self.model_version,
@@ -95,7 +112,6 @@ class TritonClient(Client):
             else:
                 return self._infer_with_metrics(
                     fn=self.client.infer,
-                    batch_size=len(samples),
                     **{
                         "model_name": self.model,
                         "model_version": self.model_version,
@@ -104,14 +120,14 @@ class TritonClient(Client):
                     },
                 )
 
-    def _infer_with_metrics(self, fn, batch_size: int, **kwargs):
+    def _infer_with_metrics(self, fn, **kwargs):
         try:
             req = fn(**kwargs)
-            self.metric_infer_requests_success.labels(self.model, batch_size).inc()
+            self.metric_infer_requests_success.labels(*list(self.metric_tags.values())).inc()
             return req
         except InferenceServerException as e:
             LOG.error("failed inference: %s, details: %s", e.message(), e.debug_details())
-            self.metric_infer_failed_requests.labels(self.model, batch_size).inc()
+            self.metric_infer_failed_requests.labels(*list(self.metric_tags.values())).inc()
             return None
 
     def infer_batch_async(self, samples) -> httpclient.InferAsyncRequest:
