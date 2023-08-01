@@ -37,27 +37,32 @@ class ChartGen:
     def plot_chart(
         self, labels: pd.DataFrame, chart_data: pd.DataFrame, chart_name: str, output_dir: str, model_id: str
     ):
+        # Pick top 10 values
+        top10 = chart_data.nlargest(n=10, keep="all")
         # Set the figure size
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(18, 13))
 
-        x_ticks = range(len(chart_data))
-        ax.bar(x_ticks, chart_data, color=[self.colors.get(format_val, "gray") for format_val in labels["format"]])
+        x_ticks = range(len(top10))
+        ax.bar(x_ticks, top10, color=[self.colors.get(format_val, "gray") for format_val in labels["format"]])
         ax.set_xticks(x_ticks)
         ax.set_xticklabels([])
         ax.set_xlabel("Configuration")
         ax.set_ylabel(chart_name)
-        ax.set_title(f"Comparison of {chart_name}", loc="left")
+        ax.set_title(f"Top 10 {chart_name}", loc="right")
 
-        for i, label_val in enumerate(labels.values):
+        idx = 0
+        for row, val in top10.items():
+            label_val = labels.iloc[row]
             success_rate = "{:.2f}".format(label_val[7])
             ax.text(
-                i,
-                chart_data[i],
+                idx,
+                val,
                 f"format={label_val[0]}\ndevice={label_val[1]}\nprecision={label_val[2]}\nbatch_size={label_val[3]}\nclients={label_val[4]}\ninstances={label_val[5]}\nsequence_length={label_val[6]} \nthroughput={success_rate}\ndataset={label_val[8]}\nid={label_val[9]}",
                 ha="center",
                 va="bottom",
                 fontsize=8,
             )
+            idx += 1
 
         # Adjust spacing between subplots and ensure labels fit
         plt.tight_layout()
@@ -90,4 +95,6 @@ class ChartGen:
 
 
 if __name__ == "__main__":
-    ChartGen().plot_charts(hf_id="prajjwal1/bert-tiny", df=None, output_dir="./temp")
+    chart_gen = ChartGen()
+    chart_gen.add_data(pd.read_csv("./temp/tmp/test.csv"))
+    chart_gen.plot_charts(model_id="prajjwal1/bert-tiny", df=None, output_dir="./temp/tmp/")
