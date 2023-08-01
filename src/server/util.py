@@ -49,6 +49,7 @@ def run_docker_sdk(image_name, workspace=None, docker_args=[], gpu=False, env={}
         detach=True,
         environment=env,
         auto_remove=True,
+        shm_size="1G",  # TODO: make this configurable
     )
 
     t = Thread(target=print_container_logs, args=[container])

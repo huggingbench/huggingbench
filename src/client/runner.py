@@ -156,6 +156,9 @@ class Runner:
         last_request_time = timer()
         success_rate = success_counter.value() / (last_request_time - first_request_time)
         failure_rate = fail_counter.value() / (last_request_time - first_request_time)
+        if success_rate == 0:
+            LOG.error("No successful inference requests")
+            return None
         # Convert execution times to a numpy array
         execution_times = self.execution_times
         self.execution_times = []

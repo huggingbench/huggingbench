@@ -27,6 +27,7 @@ class ExperimentRunner:
 
     def run(self):
         failed_exp = []
+        LOG.info(f"Running {len(self.experiments)} experiments")
         for spec in self.experiments:
             try:
                 server = None
@@ -38,7 +39,8 @@ class ExperimentRunner:
                 client_runner = Runner(runner_config, client, self._dataset_or_random(spec.dataset, model.input_shape))
                 success = False
                 stats = client_runner.run()
-                success = True
+                if stats:
+                    success = True
             except Exception as e:
                 LOG.error(f"Experiment {spec} has failed: {e}", exc_info=True)
                 success = False
