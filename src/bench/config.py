@@ -111,9 +111,9 @@ class ModelInfo:
             raise Exception("Model format is not onnx")
 
     def param_str(self):
-        format_params = "-".join(sorted(map(str, self.format.parameters.values())))
+        format_params = params_sorted_by_key(self.format.parameters)
         if self.format.origin:
-            origin_params = "-".join(sorted(map(str, self.format.origin.parameters.values())))
+            origin_params = params_sorted_by_key(self.format.origin.parameters)
             format_params += origin_params
         return format_params
 
@@ -129,3 +129,7 @@ class ModelInfo:
 
 def get_os_friendly_path(hf_id: str):
     return hf_id.replace("/", "-")
+
+
+def params_sorted_by_key(params: dict) -> str:
+    return "-".join(map(str, dict(sorted(params.items())).values()))
