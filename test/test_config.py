@@ -1,6 +1,6 @@
 import pytest
 
-from bench.config import Format, Input, ModelInfo, Output
+from bench.config import Format, Input, ModelInfo, Output, params_sorted_by_key
 
 
 @pytest.fixture
@@ -86,3 +86,11 @@ def test_trt_with_shapes(trt_model_info):
     new_model_info = trt_model_info.with_shapes(input_shape, output_shape)
     assert new_model_info.input_shape == input_shape
     assert new_model_info.output_shape == output_shape
+
+
+def test_param_values_sorted_by_key():
+    format_params = {"device": "gpu", "precision": "fp16"}
+    assert params_sorted_by_key(format_params) == "gpu-fp16"
+
+    format_params = {"device": "gpu", "precision": "fp16", "batch_size": 1}
+    assert params_sorted_by_key(format_params) == "1-gpu-fp16"
