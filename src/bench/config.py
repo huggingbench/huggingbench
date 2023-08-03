@@ -11,7 +11,7 @@ class ExperimentSpec:
     id: str
     format: str
     device: str
-    task: str = None
+    task: str = "autodetect"
     batch_size: int = 1
     sequence_length: int = 100
     clients: int = 1
@@ -45,7 +45,7 @@ class ExperimentSpec:
             "client_workers": str(self.clients),
             "dataset": self.dataset,
             "insances": str(self.instances),
-            "task": self.task if self.task else "autodetect",
+            "task": self.task,
         }
         return tags
 

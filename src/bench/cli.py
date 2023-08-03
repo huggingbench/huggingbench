@@ -54,7 +54,9 @@ def add_common_args(parser: argparse.ArgumentParser):
         default=None,
         help="Path of model to benchmark. Model has to be in PyTorch format and folder must contain `config.json`. You have to provide `--task` (can't be autodetected) and `--id`(since we use it as a unique identifier for the model).",
     )
-    parser.add_argument("--task", default=None, help="Model tasks to benchmark. Only used with --model_local_path")
+    parser.add_argument(
+        "--task", default="autodetect", help="Model tasks to benchmark. Only used with --model_local_path"
+    )
 
 
 def hbench():

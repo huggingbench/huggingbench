@@ -1,5 +1,5 @@
 global:
-  scrape_interval: 500ms # Benchmark runs are short lived, so we want to scrape frequently.
+  scrape_interval: 5s # Benchmark runs are short lived, so we want to scrape frequently.
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
