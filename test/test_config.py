@@ -20,15 +20,15 @@ def onnx_model_info():
 
 
 def test_unique_name(onnx_model_info):
-    assert onnx_model_info.unique_name() == "hf_model_id-classification-onnx-fp16-gpu"
+    assert onnx_model_info.unique_name() == "hf_model_id-classification-onnx-gpu-fp16"
 
 
 def test_model_dir(onnx_model_info):
-    assert onnx_model_info.model_dir() == "/path/to/models/hf_model_id-classification-onnx-fp16-gpu"
+    assert onnx_model_info.model_dir() == "/path/to/models/hf_model_id-classification-onnx-gpu-fp16"
 
 
 def test_model_file_path(onnx_model_info):
-    assert onnx_model_info.model_file_path() == "/path/to/models/hf_model_id-classification-onnx-fp16-gpu/model.onnx"
+    assert onnx_model_info.model_file_path() == "/path/to/models/hf_model_id-classification-onnx-gpu-fp16/model.onnx"
 
 
 def test_gpu_enabled(onnx_model_info):
@@ -65,11 +65,11 @@ def trt_model_info():
 
 
 def test_trt_unique_name(trt_model_info):
-    assert trt_model_info.unique_name() == "model_id-classification-trt-fp32-gpu"
+    assert trt_model_info.unique_name() == "model_id-classification-trt-gpu-fp32"
 
 
 def test_trt_model_file_path(trt_model_info):
-    assert trt_model_info.model_file_path() == "/path/to/model/model_id-classification-trt-fp32-gpu/model.plan"
+    assert trt_model_info.model_file_path() == "/path/to/model/model_id-classification-trt-gpu-fp32/model.plan"
 
 
 def test_trt_gpu_enabled(trt_model_info):
