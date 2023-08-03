@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 import logging
+import os
 import queue
 from concurrent.futures import (
     CancelledError,
     Future,
     ThreadPoolExecutor,
     TimeoutError,
-    as_completed,
 )
 from threading import Event, Lock, Thread
 from timeit import default_timer as timer
@@ -39,16 +39,21 @@ class RunnerStats:
         return f"RunnerStats(execution_times={self.execution_times}, success_rate={self.success_rate}, failure_rate={self.failure_rate}, total={self.total}, success_count={self.success_count})"
 
 
+ENV_EXPERIMENT_RUN_INTERVAL = "EXPERIMENT_RUN_INTERVAL"
+EXPERIMENT_RUN_INTERVAL = 300  # for how long to run the experiment in seconds
+
+
 class Runner:
     """Runner is responsible for sending requests to the server using
     inference client and collecting the results.
     It manages client concurrency and async behavior."""
 
-    def __init__(self, cfg: RunnerConfig, client: Client, dataset: DatasetAlias) -> None:
+    def __init__(self, cfg: RunnerConfig, client: Client, dataset: DatasetAlias, time_bound=True) -> None:
         self.config = cfg
         self.client = client
-        self.dataset = DatasetIterator(dataset, infinite=False)
+        self.dataset = DatasetIterator(dataset, infinite=time_bound)
         self.execution_times = []
+        self.experiment_run_interval = int(os.getenv(ENV_EXPERIMENT_RUN_INTERVAL, EXPERIMENT_RUN_INTERVAL))
 
     def run(self) -> RunnerStats:
         LOG.info("Starting client runner")
@@ -103,13 +108,9 @@ class Runner:
             async_res_thread.daemon = True  # queue.get() is blocking, so we need to make sure this thread is killed
             async_res_thread.start()
 
-        item_cnt = 0
-        batch_group_cnt = 0
-        total = len(self.dataset)
-        status_update_lock = Lock()
+        total = 0
 
         def future_result(f: Future):
-            nonlocal item_cnt, batch_group_cnt, total
             try:
                 success = f.result()
                 LOG.debug("Future completed with result: %s", success)
@@ -119,34 +120,63 @@ class Runner:
             except (CancelledError, TimeoutError, Exception) as e:
                 LOG.error("future error: %s", e)
                 fail_counter.increment(1)
-            finally:
-                with status_update_lock:
-                    item_cnt += 1
-                    progress = item_cnt / total
-                    if progress > 0.1:
-                        LOG.info(
-                            f"Processed {int(progress*batch_group_cnt*100)}%...",
-                        )
-                        item_cnt = 0
-                        batch_group_cnt += 1
 
         batch = []
-        futures = []
+        futures = queue.Queue(maxsize=1000)  # Size picked arbitrarily
         first_request_time = timer()
-        LOG.info("Processed 0 of %d items", total)
+        log_info_update_time = first_request_time + 30  # log info every 30 seconds
+        max_time = first_request_time + self.experiment_run_interval
+        LOG.info("Starting experiment for %d seconds", self.experiment_run_interval)
+
+        done = object()
+
+        def process_futures(futures):
+            while True:
+                f = futures.get()
+                if f is done:
+                    break
+                future_result(f)
+
+        t = Thread(target=process_futures, args=(futures,))
+        t.daemon = True
+        t.start()
+
         for sample in self.dataset:
+            cur_time = timer()
+            if cur_time > max_time:
+                LOG.info(
+                    "Stopping experiment benchmark. Reached experiment time limit of %d seconds",
+                    self.experiment_run_interval,
+                )
+                LOG.info("Processed total of %d items", total)
+                break
+            if cur_time > log_info_update_time:
+                LOG.info(
+                    "Processed %d items in %d seconds. Success rate: %f, Failure rate: %f ...",
+                    total,
+                    cur_time - first_request_time,
+                    success_counter.value() / (cur_time - first_request_time),
+                    fail_counter.value() / (cur_time - first_request_time),
+                )
+                log_info_update_time = cur_time + 30
+                if fail_counter.value() > 0:
+                    if success_counter.value() / (success_counter.value() + fail_counter.value()) < 0.05:
+                        LOG.warn("Success rate is less than 5%. Stopping the experiment")
+                        break
+            total += 1
             batch.append(sample)
             if len(batch) == self.config.batch_size:
                 f = executor.submit(send_batch, batch)
-                futures.append(f)
+                futures.put(f)
                 batch = []
 
         if len(batch) > 0:
             f = executor.submit(send_batch, batch)
-            futures.append(f)
+            futures.put(f)
+        futures.put(done)  # signal the thread to stop
 
-        for f in as_completed(futures):
-            future_result(f)
+        t.join()
+
         LOG.info("Processed all items")
         executor.shutdown(wait=True, cancel_futures=True)
         LOG.info("Finished processing all items")

@@ -44,9 +44,9 @@ class ModelExporter:
         LOG.info(PRINT_HEADER % " ONNX EXPORT ")
 
         onnx_model_info = ModelInfo(
-            self.spec.id,
-            self.spec.task,
-            Format(
+            hf_id=self.spec.id,
+            task=self.spec.task,
+            format=Format(
                 "onnx",
                 {
                     "atol": atol,
@@ -90,7 +90,7 @@ class ModelExporter:
         else:
             LOG.info("Skipping f16 for onnx export. Device must be gpu to support f16.")
 
-        if self.spec.task:
+        if self.spec.task and self.spec.task != "autodetect":
             cmd.append(f"--task={self.spec.task}")
 
         cmd.append(onnx_model_info.model_dir())

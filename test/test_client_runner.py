@@ -21,7 +21,7 @@ class RunnerTestCase(unittest.TestCase):
 
         # Testing no batching
         config = RunnerConfig(batch_size=1, async_req=False, workers=1)
-        runner = Runner(config, mock_client, mock_dataset)
+        runner = Runner(config, mock_client, mock_dataset, False)
         stats = runner.run()
         self.assertEqual(len(stats.execution_times), len(sample_dataset))
         self.assertEqual(stats.failure_rate, 0.0)
@@ -30,7 +30,7 @@ class RunnerTestCase(unittest.TestCase):
 
         # Testing with batching
         config = RunnerConfig(batch_size=2, async_req=False, workers=1)
-        runner = Runner(config, mock_client, mock_dataset)
+        runner = Runner(config, mock_client, mock_dataset, False)
         stats = runner.run()
         total_batches = len(sample_dataset) // 2 if len(sample_dataset) % 2 == 0 else len(sample_dataset) // 2 + 1
         self.assertEqual(len(stats.execution_times), total_batches)
@@ -40,7 +40,7 @@ class RunnerTestCase(unittest.TestCase):
 
         # Testing with batching and multiple workers
         config = RunnerConfig(batch_size=2, async_req=False, workers=2)
-        runner = Runner(config, mock_client, mock_dataset)
+        runner = Runner(config, mock_client, mock_dataset, False)
         stats = runner.run()
         total_batches = len(sample_dataset) // 2 if len(sample_dataset) % 2 == 0 else len(sample_dataset) // 2 + 1
         self.assertEqual(len(stats.execution_times), total_batches)
@@ -50,7 +50,7 @@ class RunnerTestCase(unittest.TestCase):
 
         # Testing async requests
         config = RunnerConfig(batch_size=1, async_req=True, workers=1)
-        runner = Runner(config, mock_client, mock_dataset)
+        runner = Runner(config, mock_client, mock_dataset, False)
         stats = runner.run()
         self.assertEqual(len(stats.execution_times), len(sample_dataset))
         self.assertEqual(stats.failure_rate, 0.0)

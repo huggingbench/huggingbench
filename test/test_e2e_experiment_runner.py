@@ -17,7 +17,7 @@ def test_experiment_runner():
     )  # given model only supports batch size 1
     os.environ[
         ENV_TRITON_SERVER_DOCKER
-    ] = "ghcr.io/niksajakovljevic/tritonserver:23.04-onnx"  # we use custom docker to reduce image size
+    ] = "ghcr.io/niksajakovljevic/tritonserver:23.04-onnx"  # we use custom docker to reduce image size otherwise CI won't work
     plugin_manager = PluginManager()
     triton_plugin = plugin_manager.get_plugin("triton")
     ExperimentRunner(triton_plugin, [experiment]).run()
