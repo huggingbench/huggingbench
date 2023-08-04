@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 from tabulate import tabulate
+from typing import List
 
 from bench.config import ExperimentSpec, Input
 from bench.plugin import Plugin
@@ -19,23 +20,21 @@ class ExperimentRunner:
     def __init__(
         self,
         plugin: Plugin,
-        experiments: list[ExperimentSpec],
     ) -> None:
         self.plugin = plugin
-        self.experiments = experiments
         self.chart_gen = ChartGen()
 
-    def run(self):
+    def run(self, experiments: List[ExperimentSpec]):
         failed_exp = []
-        LOG.info(f"Running {len(self.experiments)} experiments")
-        for spec in self.experiments:
+        LOG.info(f"Running {len(experiments)} experiments")
+        for spec in experiments:
             try:
                 server = None
                 model = self.plugin.model(spec)
                 server = self.plugin.server(spec, model)
                 server.start()
                 client = self.plugin.client(spec, model)
-                runner_config = RunnerConfig(batch_size=spec.batch_size, workers=spec.clients)
+                runner_config = RunnerConfig(batch_size=spec.batch_size, workers=spec.clients, async_req=spec.async_req)
                 client_runner = Runner(runner_config, client, self._dataset_or_random(spec.dataset, model.input_shape))
                 success = False
                 stats = client_runner.run()
@@ -57,11 +56,11 @@ class ExperimentRunner:
         if self.chart_gen.data is not None:
             print(tabulate(self.chart_gen.data[tabulate_cols], headers="keys", tablefmt="psql", showindex="never"))
             out_dir = (
-                self.experiments[0].workspace_dir + "/" + self.plugin.get_name()
+                experiments[0].workspace_dir + "/" + self.plugin.get_name()
             )  # all experiments have the same workspace_dir
             os.makedirs(out_dir, exist_ok=True)
             self.chart_gen.plot_charts(
-                output_dir=out_dir, model_id=self.experiments[0].id
+                output_dir=out_dir, model_id=experiments[0].id
             )  # all experiments have the same id
         else:
             print("Something went wrong! No data to plot!")
@@ -88,7 +87,7 @@ class ExperimentRunner:
         LOG.info(f"Results written to {output_file}")
         return df
 
-    def _dataset_or_random(self, dataset_id: str, inputs: list[Input]) -> DatasetAlias:
+    def _dataset_or_random(self, dataset_id: str, inputs: List[Input]) -> DatasetAlias:
         if dataset_id != "random":
             return get_dataset(dataset_id)
         else:

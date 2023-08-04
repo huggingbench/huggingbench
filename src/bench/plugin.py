@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import argparse
 from typing import Any
 from bench.config import ExperimentSpec, ModelInfo
 
@@ -55,4 +56,8 @@ class Plugin:
 
     @abstractmethod
     def server(self, spec: ExperimentSpec, model: ModelInfo) -> Server:
+        pass
+
+    @abstractmethod
+    def add_args(parser: argparse.ArgumentParser):
         pass

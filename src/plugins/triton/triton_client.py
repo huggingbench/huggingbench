@@ -87,12 +87,12 @@ class TritonClient(Client):
             start_http_server(prom_port)
             TritonClient.prom_started = True
 
-    def infer(self, samples) -> httpclient.InferResult:
+    def infer(self, samples, async_req: bool = False) -> httpclient.InferResult:
         """Runs inference on the triton server"""
-        return self.infer_batch(samples)
+        return self.infer_batch(samples, async_req=async_req)
 
-    def infer_batch(self, samples) -> httpclient.InferResult:
-        return self._infer_batch(samples, async_req=False)
+    def infer_batch(self, samples, async_req=False) -> httpclient.InferResult:
+        return self._infer_batch(samples, async_req=async_req)
 
     def _infer_batch(self, samples, async_req: bool = False):
         """Runs inference on the triton server"""

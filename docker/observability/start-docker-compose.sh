@@ -1,6 +1,7 @@
 #!/bin/bash
 # On Mac we have host.docker.internal set but on Linux we need to set it manually.
 # Use this script to spin up docker containers with Docker compose.
+# Script must run from this folder
 
 
 if [ "Linux" == $(uname -s) ]; then

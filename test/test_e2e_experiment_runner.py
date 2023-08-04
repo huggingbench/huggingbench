@@ -20,7 +20,7 @@ def test_experiment_runner():
     ] = "ghcr.io/niksajakovljevic/tritonserver:23.04-onnx"  # we use custom docker to reduce image size otherwise CI won't work
     plugin_manager = PluginManager()
     triton_plugin = plugin_manager.get_plugin("triton")
-    ExperimentRunner(triton_plugin, [experiment]).run()
+    ExperimentRunner(triton_plugin).run([experiment])
 
     csv_file = Path(experiment.get_csv_output_path("./temp/triton"))
     if not csv_file.exists():

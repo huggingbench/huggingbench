@@ -72,8 +72,7 @@ class Runner:
             start = timer()
             success = False
             if self.config.async_req:
-                LOG.warn("Async requests not supported atm. Sending sync request")
-                req = self.client.infer(batch)
+                req = self.client.infer(batch, async_req=True)
                 if req is not None:
                     async_reqs.put(req)
                     LOG.debug("Sent async batch request")
