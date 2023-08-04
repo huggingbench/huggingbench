@@ -1,6 +1,7 @@
 # from tritonclient.grpc.model_config_pb2 import ModelConfig, ModelInput, ModelOutput, DataType
 import os
 from dataclasses import dataclass, field
+from typing import List
 
 TEMP_DIR = "./temp"
 TEMP_MODEL_REPO_DIR = f"{TEMP_DIR}/model_repository"
@@ -14,6 +15,7 @@ class ExperimentSpec:
     task: str = "autodetect"
     batch_size: int = 1
     sequence_length: int = 100
+    async_req: bool = False
     clients: int = 1
     instances: int = 1
     model_local_path: str = None
@@ -74,14 +76,14 @@ class Format:
 class Input:
     name: str
     dtype: str
-    dims: list[int]
+    dims: List[int]
 
 
 @dataclass
 class Output:
     name: str
     dtype: str
-    dims: list[int]
+    dims: List[int]
 
 
 @dataclass
@@ -90,8 +92,8 @@ class ModelInfo:
     task: str
     format: Format
     base_dir: str
-    input_shape: list[Input] = field(default_factory=list)
-    output_shape: list[Output] = field(default_factory=list)
+    input_shape: List[Input] = field(default_factory=list)
+    output_shape: List[Output] = field(default_factory=list)
 
     def unique_name(self):
         params_str = f"-{self.param_str()}" if (self.param_str()) else ""

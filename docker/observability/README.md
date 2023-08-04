@@ -6,7 +6,8 @@ Make sure to spin up the stack before running the benchmarks.
 
 `docker-compose up` or `docker compose up`
 
-On Linux run: `./start-docker-compose.sh`
+On Linux run (must run from this folder): `./start-docker-compose.sh`
+
 
 For Grafana go to: `http://localhost:3000` and login: `admin/foobar`
 For Prometheus go to: `http://localhost:9090`

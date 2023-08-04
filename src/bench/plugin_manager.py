@@ -39,11 +39,10 @@ class PluginManager:
                 LOG.error(f"Error loading plugin {name}", exc_info=True)
                 return None
 
-    def arg_parsers(self, parsers) -> None:
-        for module_name in self.loaded_modules.keys():
-            module = self.loaded_modules[module_name]
-            if hasattr(module, "add_args"):
-                module.add_args(parsers[module_name])
+    def arg_parsers(self, parsers: dict) -> None:
+        for name, plugin_class in Plugin._plugin_classes.items():
+            if hasattr(plugin_class, "add_args"):
+                plugin_class.add_args(parsers[name])
 
     def get_plugin(self, name: str, *args, **kwargs) -> Plugin:
         """Picks a plugin by name and returns an instance of it"""

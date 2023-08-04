@@ -16,6 +16,8 @@ from bench.exp_runner import ExperimentRunner
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger("CLI")
 
+plugin_manager = PluginManager()
+
 
 def add_common_args(parser: argparse.ArgumentParser):
     # Define the command-line arguments with their default values
@@ -69,6 +71,7 @@ def hbench():
     )
 
     plugin_parsers = {name: subparsers.add_parser(name) for name in PLUGINS}
+    plugin_manager.arg_parsers(plugin_parsers)
 
     # Add the arguments shared for all plugins
     for plugin_parser in plugin_parsers.values():
@@ -98,8 +101,8 @@ def run(args):
     instance_count = args.instance_count
     workspace_dir = args.workspace
     dataset_id = args.dataset_id
+    async_req = args.async_req
 
-    plugin_manager = PluginManager()
     triton_plugin = plugin_manager.get_plugin("triton")
 
     experiments = []
@@ -123,6 +126,7 @@ def run(args):
                                     instances=i,
                                     workspace_dir=workspace_dir,
                                     dataset=dataset_id,
+                                    async_req=async_req,
                                 )
                                 if experiment.is_valid():
                                     LOG.info(f"Adding valid experiment: {experiment}")
@@ -132,8 +136,7 @@ def run(args):
 
         ExperimentRunner(
             triton_plugin,
-            experiments,
-        ).run()
+        ).run(experiments)
 
 
 if __name__ == "__main__":

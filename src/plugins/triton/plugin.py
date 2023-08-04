@@ -1,3 +1,4 @@
+import argparse
 from bench.plugin import Plugin, Server
 from bench.config import ExperimentSpec, ModelInfo
 from bench.plugin import Client
@@ -27,3 +28,8 @@ class TritonPlugin(Plugin, name="triton"):
     def server(self, spec: ExperimentSpec, model: ModelInfo) -> Server:
         triton_config = TritonConfig(model, spec, spec.workspace_dir).create_model_repo(spec.batch_size)
         return TritonServer(triton_config)
+
+    def add_args(parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "--async_req", type=bool, default=False, help="Send asynchronous inference requests (Triton specific)"
+        )
