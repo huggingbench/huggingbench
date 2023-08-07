@@ -134,9 +134,9 @@ def run(args):
                                 else:
                                     LOG.warning(f"Skipping invalid experiment: {experiment}")
 
-        ExperimentRunner(
-            triton_plugin,
-        ).run(experiments)
+    ExperimentRunner(
+        triton_plugin,
+    ).run(experiments)
 
 
 if __name__ == "__main__":
