@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -75,8 +75,7 @@
                 "value": 80
               }
             ]
-          },
-          "unit": "s"
+          }
         },
         "overrides": []
       },
@@ -86,7 +85,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 5,
+      "id": 7,
       "options": {
         "legend": {
           "calcs": [],
@@ -106,13 +105,13 @@
             "uid": "P1809F7CD0C75ACF3"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le, batch_size, model) (rate(client_infer_latency_bucket[1m])))",
-          "legendFormat": "",
+          "expr": "nv_gpu_utilization",
+          "instant": false,
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Client infer latency  p90",
+      "title": "GPU utilization",
       "type": "timeseries"
     },
     {
@@ -205,7 +204,193 @@
           "refId": "A"
         }
       ],
-      "title": "CPU used memory",
+      "title": "Memory usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "P1809F7CD0C75ACF3"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "P1809F7CD0C75ACF3"
+          },
+          "editorMode": "code",
+          "expr": "nv_gpu_memory_used_bytes",
+          "instant": false,
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "GPU memory used",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "P1809F7CD0C75ACF3"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "pps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "P1809F7CD0C75ACF3"
+          },
+          "editorMode": "code",
+          "expr": "rate(nv_inference_count[1m])",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Inference rate",
       "type": "timeseries"
     },
     {
@@ -270,7 +455,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 8
+        "y": 16
       },
       "id": 3,
       "options": {
@@ -357,7 +542,7 @@
               }
             ]
           },
-          "unit": "pps"
+          "unit": "µs"
         },
         "overrides": []
       },
@@ -365,9 +550,9 @@
         "h": 8,
         "w": 10,
         "x": 12,
-        "y": 8
+        "y": 16
       },
-      "id": 4,
+      "id": 1,
       "options": {
         "legend": {
           "calcs": [],
@@ -386,14 +571,15 @@
             "type": "prometheus",
             "uid": "P1809F7CD0C75ACF3"
           },
-          "editorMode": "builder",
-          "expr": "rate(nv_inference_count[1m])",
+          "editorMode": "code",
+          "expr": "rate(nv_inference_request_duration_us[1m])/(rate(nv_inference_request_success[1m])+rate(nv_inference_request_failure[1m]))",
+          "hide": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Inference rate",
+      "title": "Inference request duration (avg)",
       "type": "timeseries"
     },
     {
@@ -441,8 +627,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -450,17 +635,17 @@
               }
             ]
           },
-          "unit": "µs"
+          "unit": "s"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 10,
+        "w": 12,
         "x": 0,
-        "y": 16
+        "y": 24
       },
-      "id": 1,
+      "id": 5,
       "options": {
         "legend": {
           "calcs": [],
@@ -480,18 +665,17 @@
             "uid": "P1809F7CD0C75ACF3"
           },
           "editorMode": "code",
-          "expr": "rate(nv_inference_request_duration_us[1m])/(rate(nv_inference_request_success[1m])+rate(nv_inference_request_failure[1m]))",
-          "hide": false,
-          "legendFormat": "__auto",
+          "expr": "histogram_quantile(0.9, sum by(le, batch_size, model) (rate(client_infer_latency_bucket[1m])))",
+          "legendFormat": "",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Inference request duration (avg)",
+      "title": "Client infer latency  p90",
       "type": "timeseries"
     }
   ],
-  "refresh": "",
+  "refresh": false,
   "schemaVersion": 38,
   "style": "dark",
   "tags": [],
@@ -506,6 +690,6 @@
   "timezone": "",
   "title": "HuggingBench Main Dashboard",
   "uid": "f5418d89-a49e-4069-8d3d-b470a7378314",
-  "version": 26,
+  "version": 11,
   "weekStart": ""
 }

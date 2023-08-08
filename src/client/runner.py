@@ -8,11 +8,12 @@ from concurrent.futures import (
     ThreadPoolExecutor,
     TimeoutError,
 )
+import concurrent.futures as concurrent_futures
 from threading import Event, Lock, Thread
 from timeit import default_timer as timer
 from typing import List
 
-from tritonclient.http import InferenceServerException
+from tritonclient.http import InferenceServerException, InferAsyncRequest, InferResult
 from bench.plugin import Client
 
 from client.base import DatasetAlias, DatasetIterator
@@ -32,15 +33,16 @@ class RunnerStats:
     execution_times: List[float]
     success_rate: float
     failure_rate: float
-    total: int
-    success_count: int
+    total: int  # total number of inferences
+    success_count: int  # number of successful inferences
 
     def __str__(self) -> str:
         return f"RunnerStats(execution_times={self.execution_times}, success_rate={self.success_rate}, failure_rate={self.failure_rate}, total={self.total}, success_count={self.success_count})"
 
 
 ENV_EXPERIMENT_RUN_INTERVAL = "EXPERIMENT_RUN_INTERVAL"
-EXPERIMENT_RUN_INTERVAL = 300  # for how long to run the experiment in seconds
+EXPERIMENT_RUN_INTERVAL = 150  # for how long to run the experiment in seconds
+LOG_PROGRESS_MSG_INTERVAL = 10  # log progress info every 10 seconds
 
 
 class Runner:
@@ -92,49 +94,61 @@ class Runner:
 
         if self.config.async_req:
 
-            def get_async_result(async_reqs: queue.Queue, completed: Event):
+            def get_async_result(async_reqs: queue.Queue[InferAsyncRequest], completed: Event, batch_size: int):
                 while not completed.is_set():
                     req = async_reqs.get()
                     try:
-                        res = req.get_result()
+                        res: InferResult = req.get_result()
                         LOG.debug("Received async result: %s", res.get_response())
-                        success_counter.increment(1)
+                        success_counter.increment(
+                            batch_size
+                        )  #  this is not fully accurate b/c the last batch might not be full, the proper workaround is to inspect the response
                     except InferenceServerException as e:
                         LOG.warn("Failed async request: %s", e.debug_details())
-                        fail_counter.increment(1)
+                        fail_counter.increment(batch_size)
 
-            async_res_thread = Thread(target=get_async_result, args=(async_reqs, completed))  # process async responses
+            async_res_thread = Thread(
+                target=get_async_result, args=(async_reqs, completed, self.config.batch_size)
+            )  # process async responses
             async_res_thread.daemon = True  # queue.get() is blocking, so we need to make sure this thread is killed
             async_res_thread.start()
 
         total = 0
 
-        def future_result(f: Future):
+        def future_result(f: Future, batch_size: int):
             try:
                 success = f.result()
                 LOG.debug("Future completed with result: %s", success)
                 if not self.config.async_req:
                     """If not async, then we need to increment the counters here"""
-                    success_counter.increment(1) if success else fail_counter.increment(1)
+                    success_counter.increment(batch_size) if success else fail_counter.increment(batch_size)
             except (CancelledError, TimeoutError, Exception) as e:
                 LOG.error("future error: %s", e)
-                fail_counter.increment(1)
+                fail_counter.increment(batch_size)
 
         batch = []
-        futures = queue.Queue(maxsize=1000)  # Size picked arbitrarily
+        futures = queue.Queue[FutureWrapper](maxsize=1000)  # Size picked arbitrarily
         first_request_time = timer()
-        log_info_update_time = first_request_time + 30  # log info every 30 seconds
+        log_info_update_time = first_request_time + LOG_PROGRESS_MSG_INTERVAL  # log info every 15 seconds
         max_time = first_request_time + self.experiment_run_interval
-        LOG.info("Starting experiment for %d seconds", self.experiment_run_interval)
+        LOG.info("Running experiment for %d seconds", self.experiment_run_interval)
 
         done = object()
 
-        def process_futures(futures):
+        def process_futures(futures: queue.Queue[FutureWrapper]):
+            batch = {}
             while True:
-                f = futures.get()
-                if f is done:
+                if len(batch) > 100:
+                    for future in concurrent_futures.as_completed(batch.keys()):
+                        future_result(future, batch[future])
+                    batch = {}
+                f_wrap = futures.get()
+                if f_wrap is done:
+                    for future in concurrent_futures.as_completed(batch.keys()):
+                        future_result(future, batch[future])
                     break
-                future_result(f)
+
+                batch[f_wrap.future] = f_wrap.batch_size
 
         t = Thread(target=process_futures, args=(futures,))
         t.daemon = True
@@ -157,7 +171,7 @@ class Runner:
                     success_counter.value() / (cur_time - first_request_time),
                     fail_counter.value() / (cur_time - first_request_time),
                 )
-                log_info_update_time = cur_time + 30
+                log_info_update_time = cur_time + LOG_PROGRESS_MSG_INTERVAL
                 if fail_counter.value() > 0:
                     if success_counter.value() / (success_counter.value() + fail_counter.value()) < 0.05:
                         LOG.warn("Success rate is less than 5%. Stopping the experiment")
@@ -166,12 +180,14 @@ class Runner:
             batch.append(sample)
             if len(batch) == self.config.batch_size:
                 f = executor.submit(send_batch, batch)
-                futures.put(f)
+                f_wrap = FutureWrapper(f, len(batch))
+                futures.put(f_wrap)
                 batch = []
 
         if len(batch) > 0:
             f = executor.submit(send_batch, batch)
-            futures.put(f)
+            f_wrap = FutureWrapper(f, len(batch))
+            futures.put(f_wrap)
         futures.put(done)  # signal the thread to stop
 
         t.join()
@@ -192,6 +208,12 @@ class Runner:
         execution_times = self.execution_times
         self.execution_times = []
         return RunnerStats(execution_times, success_rate, failure_rate, total, success_counter.value())
+
+
+class FutureWrapper:
+    def __init__(self, future: Future, batch_size: int):
+        self.future = future
+        self.batch_size = batch_size
 
 
 class ThreadSafeCounter:
