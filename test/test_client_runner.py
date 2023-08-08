@@ -36,7 +36,7 @@ class RunnerTestCase(unittest.TestCase):
         self.assertEqual(len(stats.execution_times), total_batches)
         self.assertEqual(stats.failure_rate, 0.0)
         self.assertEqual(stats.total, len(sample_dataset))
-        self.assertEqual(stats.success_count, total_batches)
+        self.assertEqual(stats.success_count, len(sample_dataset))
 
         # Testing with batching and multiple workers
         config = RunnerConfig(batch_size=2, async_req=False, workers=2)
@@ -46,7 +46,7 @@ class RunnerTestCase(unittest.TestCase):
         self.assertEqual(len(stats.execution_times), total_batches)
         self.assertEqual(stats.failure_rate, 0.0)
         self.assertEqual(stats.total, len(sample_dataset))
-        self.assertEqual(stats.success_count, total_batches)
+        self.assertEqual(stats.success_count, len(sample_dataset))
 
         # Testing async requests
         config = RunnerConfig(batch_size=1, async_req=True, workers=1)

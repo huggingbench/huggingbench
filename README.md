@@ -28,6 +28,14 @@ HuggingBench aims to make it easier and faster to find an optimal model serving 
 This was started as a hobby project to learn & explore various HF models and respective model servers. It is still in early days and might be 🐞.
 Please stay tuned as we continue to improve the tool. We are happy to get your feedback so feel free to report problems, wishes, etc..
 
+## Current limitations
+
+* All runs locally using Docker containers
+* No accuracy checks are performed on converted models
+* No support for external dataset when calibrating models 
+* Models and configs are stored on a local drive
+
+We are plannig to remove above limitations.
 
 # 📋 Requirements
 
@@ -91,6 +99,10 @@ up a Docker container with Triton server, deploy the model with the right config
 by sending inference requests. Upon completion, metric table will be presented in the terminal along with 
 charts exported in JPEG. You can find the results below. In the example above the tool will automatically download
 the model from HuggingFace Hub.
+
+By default we run each load test for 150 seconds. To tweak this use env var `EXPERIMENT_RUN_INTERVAL` eg:
+
+```EXPERIMENT_RUN_INTERVAL=30 hbench triton --id prajjwal1/bert-tiny``` 
 
 # 💡 How it works
 
