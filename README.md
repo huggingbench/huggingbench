@@ -30,10 +30,11 @@ Please stay tuned as we continue to improve the tool. We are happy to get your f
 
 ## Current limitations
 
-* All runs locally using Docker containers
-* No accuracy checks are performed on converted models
-* No support for external dataset when calibrating models 
+* Everything runs locally using Docker containers
+* Accuracy checks are not performed on converted models
+* No support for external dataset when calibrating models (overall calibration support is poor) 
 * Models and configs are stored on a local drive
+* Only supporting Nvidia Triton inference server 
 
 We are plannig to remove above limitations.
 
