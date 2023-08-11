@@ -13,9 +13,12 @@
 
 # 🤖 Introduction
 
-HuggingBench is an extensible, open-source MLOps tool for benchmarking [HuggingFace models](https://huggingface.co/models). With just a single terminal command, the tool generates multiple model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completion. 
+HuggingBench is an extensible, open-source MLOps tool for benchmarking [HuggingFace models](https://huggingface.co/models). With just a single terminal command, the tool generates multiple model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completion.
 
-HuggingBench aims to make it easier and faster to find an optimal model serving configuration, while helping you better understand latency/throughput and hardware needs for serving the model. 
+***👉 Check out [the blog post](https://medium.com/@niksa.jakovljevic/introducing-huggingbench-a-path-to-optimized-model-serving-a17cecc8d3ec) describing our journey and motivation behind creating HuggingBench 👈*** 
+
+HuggingBench aims to make it easier and faster to find an optimal model serving configuration, while helping you better understand latency/throughput and hardware needs for serving the model.
+
 
 **HuggingBench Design Principles**:
 
