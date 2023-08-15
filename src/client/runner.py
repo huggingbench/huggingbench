@@ -39,6 +39,21 @@ class RunnerStats:
     def __str__(self) -> str:
         return f"RunnerStats(execution_times={self.execution_times}, success_rate={self.success_rate}, failure_rate={self.failure_rate}, total={self.total}, success_count={self.success_count})"
 
+    def merge(stats):
+        """Merge multiple RunnerStats into a single one"""
+        execution_times = stats[0].execution_times
+        success_rate = 0
+        failure_rate = 0
+        total = 0
+        success_count = 0
+        for s in stats:
+            execution_times.extend(s.execution_times)
+            success_rate += s.success_rate
+            failure_rate += s.failure_rate
+            total += s.total
+            success_count += s.success_count
+        return RunnerStats(execution_times, success_rate, failure_rate, total, success_count)
+
 
 ENV_EXPERIMENT_RUN_INTERVAL = "EXPERIMENT_RUN_INTERVAL"
 EXPERIMENT_RUN_INTERVAL = 150  # for how long to run the experiment in seconds
@@ -50,15 +65,17 @@ class Runner:
     inference client and collecting the results.
     It manages client concurrency and async behavior."""
 
-    def __init__(self, cfg: RunnerConfig, client: Client, dataset: DatasetAlias, time_bound=True) -> None:
+    def __init__(self, idx: int, cfg: RunnerConfig, client: Client, dataset: DatasetAlias, time_bound=True) -> None:
+        self.idx = idx
         self.config = cfg
         self.client = client
         self.dataset = DatasetIterator(dataset, infinite=time_bound)
+        self.lock = Lock()
         self.execution_times = []
         self.experiment_run_interval = int(os.getenv(ENV_EXPERIMENT_RUN_INTERVAL, EXPERIMENT_RUN_INTERVAL))
 
     def run(self) -> RunnerStats:
-        LOG.info("Starting client runner")
+        LOG.info(f"Starting client runner {self.idx}")
         async_reqs = queue.Queue(maxsize=1000)  # Size picked arbitrarily. Sets limit on number of outstanding requests
         completed = Event()
         executor = ThreadPoolExecutor(max_workers=self.config.workers)
@@ -89,7 +106,9 @@ class Runner:
                 else:
                     LOG.info("Failed batch request")
             end = timer()
+            self.lock.acquire()
             self.execution_times.append(end - start)  # this is only true for sync requests
+            self.lock.release()
             return success
 
         if self.config.async_req:
@@ -127,33 +146,12 @@ class Runner:
                 fail_counter.increment(batch_size)
 
         batch = []
-        futures = queue.Queue[FutureWrapper](maxsize=1000)  # Size picked arbitrarily
         first_request_time = timer()
         log_info_update_time = first_request_time + LOG_PROGRESS_MSG_INTERVAL  # log info every 15 seconds
         max_time = first_request_time + self.experiment_run_interval
         LOG.info("Running experiment for %d seconds", self.experiment_run_interval)
 
-        done = object()
-
-        def process_futures(futures: queue.Queue[FutureWrapper]):
-            batch = {}
-            while True:
-                if len(batch) > 100:
-                    for future in concurrent_futures.as_completed(batch.keys()):
-                        future_result(future, batch[future])
-                    batch = {}
-                f_wrap = futures.get()
-                if f_wrap is done:
-                    for future in concurrent_futures.as_completed(batch.keys()):
-                        future_result(future, batch[future])
-                    break
-
-                batch[f_wrap.future] = f_wrap.batch_size
-
-        t = Thread(target=process_futures, args=(futures,))
-        t.daemon = True
-        t.start()
-
+        batches = []  # we process dataset in chunk of batches
         for sample in self.dataset:
             cur_time = timer()
             if cur_time > max_time:
@@ -179,22 +177,25 @@ class Runner:
             total += 1
             batch.append(sample)
             if len(batch) == self.config.batch_size:
-                f = executor.submit(send_batch, batch)
-                f_wrap = FutureWrapper(f, len(batch))
-                futures.put(f_wrap)
+                batches.append(batch)
                 batch = []
+            if len(batches) >= 100:  # arbitrary number of batches to process in parallel
+                futures = [executor.submit(send_batch, b) for b in batches]
+                for f in concurrent_futures.as_completed(futures):
+                    future_result(f, self.config.batch_size)
+
+        if len(batches) > 0:
+            futures = [executor.submit(send_batch, b) for b in batches]
+            for f in concurrent_futures.as_completed(futures):
+                future_result(f, self.config.batch_size)
 
         if len(batch) > 0:
-            f = executor.submit(send_batch, batch)
-            f_wrap = FutureWrapper(f, len(batch))
-            futures.put(f_wrap)
-        futures.put(done)  # signal the thread to stop
+            futures = [executor.submit(send_batch, batch)]
+            for f in concurrent_futures.as_completed(futures):
+                future_result(f, len(batch))
 
-        t.join()
-
-        LOG.info("Processed all items")
+        LOG.info(f"Client {self.idx} processed all items")
         executor.shutdown(wait=True, cancel_futures=True)
-        LOG.info("Finished processing all items")
         if fail_counter.value() > 0:
             LOG.warn("Failed %d requests", fail_counter.value())
         completed.set()
@@ -208,12 +209,6 @@ class Runner:
         execution_times = self.execution_times
         self.execution_times = []
         return RunnerStats(execution_times, success_rate, failure_rate, total, success_counter.value())
-
-
-class FutureWrapper:
-    def __init__(self, future: Future, batch_size: int):
-        self.future = future
-        self.batch_size = batch_size
 
 
 class ThreadSafeCounter:

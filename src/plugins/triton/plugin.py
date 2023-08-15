@@ -12,7 +12,7 @@ class TritonPlugin(Plugin, name="triton"):
         pass
 
     def client(self, spec: ExperimentSpec, model: ModelInfo) -> Client:
-        triton_config = TritonConfig(model, spec, spec.workspace_dir).create_model_repo(spec.batch_size)
+        triton_config = TritonConfig(model, spec, spec.workspace_dir)
         triton_client = TritonClient(
             "localhost:{}".format(triton_config.http_port),
             model.unique_name(),
