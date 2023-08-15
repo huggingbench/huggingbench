@@ -3,6 +3,7 @@ import logging
 from typing import List
 
 import numpy as np
+import requests
 import tritonclient.http as httpclient
 from prometheus_client import (
     REGISTRY,
@@ -67,6 +68,11 @@ class TritonClient(Client):
         self.inputs = {tm["name"]: tm for tm in model_metadata["inputs"]}
         self.outputs = {tm["name"]: tm for tm in model_metadata["outputs"]}
 
+        # TODO: remove after testing
+        self.session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        self.session.mount("http://", adapter)
+
         if not TritonClient.prom_started:
             # metric_tags keys is never changing
             # metric_tags is guaranteed not to change after the client is created so key/value order is guaranteed
@@ -83,8 +89,8 @@ class TritonClient(Client):
                 "Number of failed inference requests",
                 labelnames=list(self.metric_tags.keys()),
             )
-            LOG.info("Exposing client metrics on port %s", prom_port)
-            start_http_server(prom_port)
+            # LOG.info("Exposing client metrics on port %s", prom_port)
+            # start_http_server(prom_port) TODO: figure out how to expose metrics in multi-process run
             TritonClient.prom_started = True
 
     def infer(self, samples, async_req: bool = False) -> httpclient.InferResult:
@@ -93,6 +99,12 @@ class TritonClient(Client):
 
     def infer_batch(self, samples, async_req=False) -> httpclient.InferResult:
         return self._infer_batch(samples, async_req=async_req)
+
+    def mock_request(self, *args, **kwargs) -> httpclient.InferResult:
+        """Mock request for testing. Sending to test endpoint"""
+        res = self.session.get("http://localhost:8080/api/v1/hello")
+        res.close()
+        return True
 
     def _infer_batch(self, samples, async_req: bool = False):
         """Runs inference on the triton server"""
@@ -119,6 +131,10 @@ class TritonClient(Client):
                         "outputs": infer_outputs,
                     },
                 )
+
+    def mock_server(self, *args, **kwargs):
+        """Mock server request for testing"""
+        return True
 
     def _infer_with_metrics(self, fn, **kwargs):
         try:

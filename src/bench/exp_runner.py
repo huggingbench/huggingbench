@@ -1,3 +1,4 @@
+from concurrent.futures import ProcessPoolExecutor
 import logging
 import os
 
@@ -13,6 +14,8 @@ from client.dataset import get_dataset
 from client.runner import Runner, RunnerConfig, RunnerStats
 from bench.chart import ChartGen
 
+from multiprocessing import Process, Queue
+
 LOG = logging.getLogger(__name__)
 
 
@@ -24,22 +27,44 @@ class ExperimentRunner:
         self.plugin = plugin
         self.chart_gen = ChartGen()
 
+    def parallel_client_run(self, idx, spec, model, dataset, queue):
+        """To utilize available CPU cores we run clients in parallel processes."""
+        client = self.plugin.client(spec, model)
+        runner_config = RunnerConfig(batch_size=spec.batch_size, workers=spec.clients, async_req=spec.async_req)
+        client_runner = Runner(idx, runner_config, client, dataset)
+        stats = client_runner.run()
+        queue.put(stats)
+        return
+
     def run(self, experiments: List[ExperimentSpec]):
         failed_exp = []
         LOG.info(f"Running {len(experiments)} experiments")
+        multi_proc_queue = Queue()
         for spec in experiments:
             try:
                 server = None
                 model = self.plugin.model(spec)
                 server = self.plugin.server(spec, model)
                 server.start()
-                client = self.plugin.client(spec, model)
-                runner_config = RunnerConfig(batch_size=spec.batch_size, workers=spec.clients, async_req=spec.async_req)
-                client_runner = Runner(runner_config, client, self._dataset_or_random(spec.dataset, model.input_shape))
+                dataset = self._dataset_or_random(spec.dataset, model.input_shape)
+                processes = []
+                for i in range(spec.clients):
+                    p = Process(target=self.parallel_client_run, args=(i, spec, model, dataset, multi_proc_queue))
+                    p.start()
+                    LOG.info(f"Started parallel client {i}")
+                    processes.append(p)
                 success = False
-                stats = client_runner.run()
-                if stats:
+                all_stats = []
+                for i in range(spec.clients):
+                    stats = multi_proc_queue.get()
+                    all_stats.append(stats)
+                for p in processes:
+                    p.join()
+                    p.close()
+                LOG.info("All client parallel processes completed")
+                if len(all_stats) == spec.clients:
                     success = True
+                stats = RunnerStats.merge(all_stats)
             except Exception as e:
                 LOG.error(f"Experiment {spec} has failed: {e}", exc_info=True)
                 success = False
