@@ -149,21 +149,23 @@ class Runner:
         first_request_time = timer()
         log_info_update_time = first_request_time + LOG_PROGRESS_MSG_INTERVAL  # log info every 15 seconds
         max_time = first_request_time + self.experiment_run_interval
-        LOG.info("Running experiment for %d seconds", self.experiment_run_interval)
+        LOG.info("Client %d: Running experiment for %d seconds", self.idx, self.experiment_run_interval)
 
         batches = []  # we process dataset in chunk of batches
         for sample in self.dataset:
             cur_time = timer()
             if cur_time > max_time:
                 LOG.info(
-                    "Stopping experiment benchmark. Reached experiment time limit of %d seconds",
+                    "Client %d: Stopping experiment benchmark. Reached experiment time limit of %d seconds",
+                    self.idx,
                     self.experiment_run_interval,
                 )
-                LOG.info("Processed total of %d items", total)
+                LOG.info("Client %d: processed total of %d items", self.idx, total)
                 break
             if cur_time > log_info_update_time:
                 LOG.info(
-                    "Processed %d items in %d seconds. Success rate: %f, Failure rate: %f ...",
+                    "Client %d: processed %d items in %d seconds. Success rate: %f, Failure rate: %f ...",
+                    self.idx,
                     total,
                     cur_time - first_request_time,
                     success_counter.value() / (cur_time - first_request_time),
@@ -194,7 +196,7 @@ class Runner:
             for f in concurrent_futures.as_completed(futures):
                 future_result(f, len(batch))
 
-        LOG.info(f"Client {self.idx} processed all items")
+        LOG.info(f"Client {self.idx}: Processed all items")
         executor.shutdown(wait=True, cancel_futures=True)
         if fail_counter.value() > 0:
             LOG.warn("Failed %d requests", fail_counter.value())
@@ -203,7 +205,7 @@ class Runner:
         success_rate = success_counter.value() / (last_request_time - first_request_time)
         failure_rate = fail_counter.value() / (last_request_time - first_request_time)
         if success_rate == 0:
-            LOG.error("No successful inference requests")
+            LOG.error(f"Client {self.idx}: No successful inference requests")
             return None
         # Convert execution times to a numpy array
         execution_times = self.execution_times
