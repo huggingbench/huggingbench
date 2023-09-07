@@ -1,4 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 import logging
 import os
 
@@ -40,13 +41,17 @@ class ExperimentRunner:
         failed_exp = []
         LOG.info(f"Running {len(experiments)} experiments")
         multi_proc_queue = Queue()
+        ctx = RunContext(0, "")
+        dataset = None
         for spec in experiments:
             try:
                 server = None
                 model = self.plugin.model(spec)
                 server = self.plugin.server(spec, model)
                 server.start()
-                dataset = self._dataset_or_random(spec.dataset, model.input_shape)
+                if not dataset:
+                    """We generate the dataset only once"""
+                    dataset = self._dataset_or_random(spec.dataset, model.input_shape)
                 processes = []
                 for i in range(spec.clients):
                     p = Process(target=self.parallel_client_run, args=(i, spec, model, dataset, multi_proc_queue))
@@ -73,6 +78,7 @@ class ExperimentRunner:
                 if server:
                     server.stop()
             if success:
+                ctx.update_max(stats.success_rate, model.unique_name())
                 df = self.process_results(spec, stats, self.plugin.get_name())
                 self.chart_gen.add_data(df)
         tabulate_cols = ChartGen.labels + ["avg", "median", "90_percentile"]
@@ -87,6 +93,8 @@ class ExperimentRunner:
             self.chart_gen.plot_charts(
                 output_dir=out_dir, model_id=experiments[0].id
             )  # all experiments have the same id
+            best_model_path = os.path.abspath(spec.workspace_dir + "/model_repository/" + ctx.model_unique_name)
+            print(f"\nNOTE: The model and configuration with the highest throughput is stored in: '{best_model_path}'")
         else:
             print("Something went wrong! No data to plot!")
 
@@ -120,3 +128,16 @@ class ExperimentRunner:
                 Input(name=i.name, dtype=i.dtype, dims=[100 if d == -1 else d for d in i.dims]) for i in inputs
             ]
             return DatasetGen(adjusted_inputs, size=1000).dataset
+
+
+@dataclass
+class RunContext:
+    """Here we keep track of max throughput and respective model"""
+
+    max_throughout: float
+    model_unique_name: str
+
+    def update_max(self, throughput: float, model_unique_name: str):
+        if throughput > self.max_throughout:
+            self.max_throughout = throughput
+            self.model_unique_name = model_unique_name

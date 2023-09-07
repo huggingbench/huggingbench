@@ -8,16 +8,17 @@
     <img src="./docs/huggingbench-logo.jpg" height="200" alt="HuggingBench">
 </div>
 
-<h3 align="center">Benchmark and experiment with HuggingFace model serving <br>🚧 Project is in Alpha stage 🚧</h3>
+<h3 align="center">Find the optimal HuggingFace model serving <br>🚧 Project is in Alpha stage 🚧</h3>
 
 
 # 🤖 Introduction
 
-HuggingBench is an extensible, open-source MLOps tool for benchmarking [HuggingFace models](https://huggingface.co/models). With just a single terminal command, the tool generates multiple model serving configurations, deploys the model, performs load testing by sending inference requests and shows respective metrics upon completion.
+HuggingBench is an extensible, open-source MLOps tool for benchmarking [HuggingFace models](https://huggingface.co/models) and finding the most optimal model serving. 
+With just a single command, the tool generates multiple model serving configurations, deploys the model, performs load testing by sending inference requests, collects respective metrics and provides the most optimal model serving.
 
 ***👉 Check out [the blog post](https://medium.com/@niksa.jakovljevic/introducing-huggingbench-a-path-to-optimized-model-serving-a17cecc8d3ec) describing our journey and motivation behind creating HuggingBench 👈*** 
 
-HuggingBench aims to make it easier and faster to find an optimal model serving configuration, while helping you better understand latency/throughput and hardware needs for serving the model.
+HuggingBench aims to make it easier and faster to find an optimal model serving configuration, while helping you better understand latency/throughput and hardware needs for serving the model. 
 
 
 **HuggingBench Design Principles**:
@@ -37,9 +38,10 @@ Please stay tuned as we continue to improve the tool. We are happy to get your f
 * Accuracy checks are not performed on converted models
 * No support for external dataset when calibrating models (overall calibration support is poor) 
 * Models and configs are stored on a local drive
-* Only supporting Nvidia Triton inference server 
+* Only supporting Nvidia Triton Inference Server
+* PyTorch model needs to map to ONNX one to one (no support for model ensamble)
 
-We are plannig to remove above limitations.
+We are plannig to remove above limitations (not promissing it will happen 😄)
 
 # 📋 Requirements
 
@@ -106,7 +108,13 @@ the model from HuggingFace Hub.
 
 By default we run each load test for 150 seconds. To tweak this use env var `EXPERIMENT_RUN_INTERVAL` eg:
 
-```EXPERIMENT_RUN_INTERVAL=30 hbench triton --id prajjwal1/bert-tiny``` 
+```EXPERIMENT_RUN_INTERVAL=30 hbench triton --id prajjwal1/bert-tiny```
+
+Keep an eye on the console output to track the progress. Upon completion the summary is printed in the console:
+
+![Console summary](./docs/bert-tiny-console-summary.png "Console summary")
+
+If you want more detailed metrics on model performance check out the section on [Prometheus](#📈-prometheus-metrics) 
 
 # 💡 How it works
 
@@ -114,7 +122,7 @@ By default we run each load test for 150 seconds. To tweak this use env var `EXP
 
 HuggingBench can be extended with additional inference servers by implementing the Plugin. At the
 moment, Nvidia Triton server is only supported, but more are coming soon. We also encourage you to contribute
-and help us make HuggingBench better (more on plugins [here](#plugins))!
+and help us make HuggingBench better (more on plugins [here](#🔌-plugins))!
 
 
 Docker containers are used a lot to help us avoid dependency hell: no need to manually
@@ -208,6 +216,9 @@ becomes a plugin and needs to implement classes defined in [plugin.py](./src/ben
 Note that currently plugin requirements are added into project requirements. Project and plugin requirements will be separated in the future.
 
 # 📖 More Examples
+
+Blog posts:
+*  [Optimizing Resnet-50: 8X inference throughput with just a few commands](https://medium.com/@niksa.jakovljevic/optimizing-resnet-50-8x-inference-throughput-with-just-a-few-commands-41fa148a25df)
 
 ## microsoft/resnet-50
 
